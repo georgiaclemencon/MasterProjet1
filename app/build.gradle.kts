@@ -60,14 +60,33 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     implementation("com.google.firebase:firebase-analytics")
+
+
+
+    // For Jetpack Compose.
+    implementation("com.patrykandpatrick.vico:compose:2.0.0-alpha.17")
+
+    // For `compose`. Creates a `ChartStyle` based on an M2 Material Theme.
+    implementation("com.patrykandpatrick.vico:compose-m2:2.0.0-alpha.17")
+
+    // For `compose`. Creates a `ChartStyle` based on an M3 Material Theme.
+    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-alpha.17")
+
+    // Houses the core logic for charts and other elements. Included in all other modules.
+    implementation("com.patrykandpatrick.vico:core:2.0.0-alpha.17")
+
 }

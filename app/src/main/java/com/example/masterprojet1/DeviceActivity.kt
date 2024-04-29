@@ -30,7 +30,6 @@ class DeviceActivity : ComponentActivity() {
 
     private lateinit var database: FirebaseDatabase
 
-
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,8 +113,7 @@ class DeviceActivity : ComponentActivity() {
                 if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
                     val newSpeed = intValue.toFloat()
                     deviceInteraction.realTimeSpeed.value = newSpeed // Update the value
-                    deviceInteraction.speedValues.value =
-                        deviceInteraction.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
+                    deviceInteraction.speedValues.value += newSpeed.toInt() // Add the new speed to speedValues
                     Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
                 } else {
                     Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")

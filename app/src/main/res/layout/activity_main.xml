@@ -29,7 +29,6 @@
         android:layout_marginBottom="16dp"
         android:autofillHints="" />
 
-
     <EditText
         app:layout_constraintTop_toBottomOf="@+id/etRecipientEmail"
         android:id="@+id/etSubject"

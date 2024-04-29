@@ -28,6 +28,46 @@
         android:theme="@style/Theme.MasterProjet1"
         tools:targetApi="31">
         <activity
+            android:name=".AnkleBraceletParametrization"
+            android:exported="false"
+            android:label="@string/title_activity_ankle_bracelet_parametrization"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".ContactForm"
+            android:exported="false"
+            android:label="@string/title_activity_contact_form"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".CreatorsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_creators"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".HelpActivity"
+            android:exported="false"
+            android:label="@string/title_activity_help"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".LEDsParamActivity"
+            android:exported="false"
+            android:label="@string/title_activity_leds_param"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".ModifyProfileActivity"
+            android:exported="false"
+            android:label="@string/title_activity_modify_profile"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false"
+            android:label="@string/title_activity_profile"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".ActivityMenu"
+            android:exported="false"
+            android:label="@string/title_activity_menu"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
             android:name=".LoginActivity"
             android:exported="false"
             android:label="@string/title_activity_login"

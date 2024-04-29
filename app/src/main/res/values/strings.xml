@@ -3,4 +3,18 @@
     <string name="title_activity_scan">ScanActivity</string>
     <string name="title_activity_device">DeviceActivity</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_menu">ActivityMenu</string>
+    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="title_activity_modify_profile">ModifyProfileActivity</string>
+    <string name="title_activity_leds_param">LEDsParamActivity</string>
+    <string name="title_activity_help">HelpActivity</string>
+    <string name="title_activity_creators">CreatorsActivity</string>
+    <string name="title_activity_contact_form">ContactForm</string>
+    <string name="title_activity_ankle_bracelet_parametrization">AnkleBraceletParametrization
+    </string>
+    <string name="adresse_mail_du_destinataire">adresse</string>
+    <string name="subject">subject</string>
+    <string name="Message">message</string>
+    <string name="Email">email</string>
+    <string name="Send_Email">sendemail</string>
 </resources>

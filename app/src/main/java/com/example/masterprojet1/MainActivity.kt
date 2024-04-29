@@ -5,7 +5,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.masterprojet1.R
 
 @Composable
 fun Masterprojet1Theme(content: @Composable () -> Unit) {
@@ -40,6 +44,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+
                         Image(
                             painter = painterResource(id = R.drawable.soundpacerunnerslogo),
                             contentDescription = "App Icon",
@@ -64,8 +69,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+//    fun startActivity() {
+//        val intent = Intent(this, ScanActivity::class.java)
+//        startActivity(intent)
+//    }
+
     fun startActivity() {
-        val intent = Intent(this, ScanActivity::class.java)
-        startActivity(intent)
-    }
+    val intent = Intent(this, LoginActivity::class.java)
+    startActivity(intent)
+}
 }

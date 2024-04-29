@@ -15,8 +15,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import com.google.firebase.database.FirebaseDatabase
 import java.util.UUID
-
 
 
 @SuppressLint("MissingPermission")
@@ -28,12 +28,17 @@ class DeviceActivity : ComponentActivity() {
 
     private var realSpeedBluetoothGattCharacteristic: BluetoothGattCharacteristic? = null
 
+    private lateinit var database: FirebaseDatabase
+
 
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val device = intent.getParcelableExtra<BluetoothDevice?>("device")
+
+        database =
+            FirebaseDatabase.getInstance("https://master-42ff9-default-rtdb.europe-west1.firebasedatabase.app/")
 
         setContent {
             val isStateConnected = remember { mutableStateOf(false) }
@@ -72,7 +77,8 @@ class DeviceActivity : ComponentActivity() {
                 val characteristic = service?.getCharacteristic(characteristicUUID)
 
                 if (characteristic != null) {
-                    realSpeedBluetoothGattCharacteristic = characteristic // Assign the characteristic to realSpeedBluetoothGattCharacteristic
+                    realSpeedBluetoothGattCharacteristic =
+                        characteristic // Assign the characteristic to realSpeedBluetoothGattCharacteristic
 
                     gatt.setCharacteristicNotification(characteristic, true)
 
@@ -101,13 +107,15 @@ class DeviceActivity : ComponentActivity() {
                 characteristic: BluetoothGattCharacteristic
             ) {
                 super.onCharacteristicChanged(gatt, characteristic)
-                val intValue = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+                val intValue =
+                    characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
                 Log.d("CharacteristicValue", "UUID: ${characteristic.uuid}, Value: $intValue")
 
                 if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
                     val newSpeed = intValue.toFloat()
                     deviceInteraction.realTimeSpeed.value = newSpeed // Update the value
-                    deviceInteraction.speedValues.value = deviceInteraction.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
+                    deviceInteraction.speedValues.value =
+                        deviceInteraction.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
                     Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
                 } else {
                     Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")
@@ -141,13 +149,15 @@ class DeviceActivity : ComponentActivity() {
 //    }
 
 
-
-
-
     fun calculateAverageSpeed(): Float {
         return if (deviceInteraction.speedValues.value.isNotEmpty()) { // Check if speedValues is not empty
             val averageSpeed = deviceInteraction.speedValues.value.average()
             Log.d("AverageSpeed", "Average Speed: $averageSpeed")
+            // envoie de la valeur de la vitesse moyenne à la base de données
+
+            database.getReference("users").child("speed").setValue(averageSpeed)
+
+
             averageSpeed.toFloat()
         } else {
             Log.d("AverageSpeed", "No speed values available")
@@ -165,9 +175,6 @@ class DeviceActivity : ComponentActivity() {
         bluetoothGatt?.close()
         bluetoothGatt = null
     }
-
-
-
 
 
 }

@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.google.firebase.database.FirebaseDatabase
+import java.util.Date
 import java.util.UUID
 
 
@@ -24,6 +25,8 @@ class DeviceActivity : ComponentActivity() {
 
     private var bluetoothGatt: BluetoothGatt? = null
     private lateinit var deviceInteraction: DeviceComposableInteraction
+    private lateinit var course: Course
+
     //private var currentLEDStateEnum = LEDStateEnum.NONE
 
     private var realSpeedBluetoothGattCharacteristic: BluetoothGattCharacteristic? = null
@@ -41,14 +44,24 @@ class DeviceActivity : ComponentActivity() {
 
         setContent {
             val isStateConnected = remember { mutableStateOf(false) }
+            val realTimeSpeed = mutableStateOf(0f)
+            val speedValues = mutableStateOf(listOf<Int>())
 
             deviceInteraction = DeviceComposableInteraction(
                 IsConnected = isStateConnected.value,
                 deviceTitle = device?.name ?: "Device Unknown",
-                realTimeSpeed = mutableStateOf(0f) // Initialize realTimeSpeed with 0f
+//                realTimeSpeed = mutableStateOf(0f) // Initialize realTimeSpeed with 0f
             )
 
-            DeviceDetail(this, deviceInteraction = mutableStateOf(deviceInteraction)) {
+
+            course = Course(
+                date = Date(), // You need to provide a date here
+                maxSpeed = 0f, // You need to provide a maxSpeed here
+                realTimeSpeed = realTimeSpeed,
+                speedValues = speedValues
+            )
+
+            DeviceDetail(this, mutableStateOf(deviceInteraction), course) {
                 connectToDevice(device)
             }
         }
@@ -112,8 +125,11 @@ class DeviceActivity : ComponentActivity() {
 
                 if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
                     val newSpeed = intValue.toFloat()
-                    deviceInteraction.realTimeSpeed.value = newSpeed // Update the value
-                    deviceInteraction.speedValues.value += newSpeed.toInt() // Add the new speed to speedValues
+                    course.realTimeSpeed.value = newSpeed // Update the value
+                    course.speedValues.value =
+                        course.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
+
+                    //deviceInteraction.speedValues.value += newSpeed.toInt() // Add the new speed to speedValues
                     Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
                 } else {
                     Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")
@@ -148,8 +164,8 @@ class DeviceActivity : ComponentActivity() {
 
 
     fun calculateAverageSpeed(): Float {
-        return if (deviceInteraction.speedValues.value.isNotEmpty()) { // Check if speedValues is not empty
-            val averageSpeed = deviceInteraction.speedValues.value.average()
+        return if (course.speedValues.value.isNotEmpty()) { // Check if speedValues is not empty
+            val averageSpeed = course.speedValues.value.average()
             Log.d("AverageSpeed", "Average Speed: $averageSpeed")
             // envoie de la valeur de la vitesse moyenne à la base de données
 

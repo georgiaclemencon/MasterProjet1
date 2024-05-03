@@ -55,7 +55,7 @@ fun DeviceDetail(
         }
 
         Button(onClick = {
-        }) {
+        }){
             Text("Démarrer une course")
         }
         DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel

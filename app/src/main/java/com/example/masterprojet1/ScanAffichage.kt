@@ -45,7 +45,7 @@ fun ScanActivityUI(
         Text(text = "Scan Activity", modifier = Modifier.padding(16.dp))
         Image(
             painter = painterResource(
-                id = if (scanInteraction.isSquareIcon.value) R.drawable.baseline_square_24 else R.drawable.baseline_play_arrow_24
+                id = if (scanInteraction.isSquareIcon.value) R.drawable.soundpacerunnerslogo else R.drawable.ampoule_vide
             ),
             contentDescription = "Scan Icon",
             modifier = Modifier
@@ -107,7 +107,7 @@ fun BluetoothDisabledScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = R.drawable.baseline_bluetooth_disabled_24),
+            painter = painterResource(id = R.drawable.ampoule_vide),
             contentDescription = "Bluetooth Disabled Logo",
             modifier = Modifier.size(150.dp)
         )
@@ -124,7 +124,7 @@ fun BluetoothNotSupportedScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = R.drawable.baseline_bluetooth_disabled_24),
+            painter = painterResource(id = R.drawable.ampoule_vide),
             contentDescription = "Bluetooth Not Supported Logo",
             modifier = Modifier.size(150.dp)
         )

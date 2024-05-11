@@ -56,7 +56,8 @@ class Historique : ComponentActivity() {
                 date = Date(), // You need to provide a date here
                 maxSpeed = 0f, // You need to provide a maxSpeed here
                 realTimeSpeed = realTimeSpeed,
-                speedValues = speedValues
+                speedValues = speedValues,
+                position = "0.0,0.0"
             )
 
             MasterProjet1Theme {

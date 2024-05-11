@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "940612433424",
-    "project_id": "master-42ff9",
-    "storage_bucket": "master-42ff9.appspot.com"
+    "project_number": "143903256060",
+    "firebase_url": "https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "master2-20e46",
+    "storage_bucket": "master2-20e46.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:940612433424:android:b65faa49c428c04224fc95",
+        "mobilesdk_app_id": "1:143903256060:android:93d40f5398a7122c1d5679",
         "android_client_info": {
           "package_name": "com.example.masterprojet1"
         }
@@ -15,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCBJ2HaETxkXMyDGdoHxxxgSv_8V2iLAlc"
+          "current_key": "AIzaSyAmJmCtglPoVReJ4BDsYF6ZqHBltAjjfdE"
         }
       ],
       "services": {

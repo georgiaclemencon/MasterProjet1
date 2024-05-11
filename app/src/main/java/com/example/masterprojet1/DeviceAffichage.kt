@@ -18,7 +18,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottomAxis
@@ -45,8 +44,11 @@ fun DeviceDetail(
     ) {
         Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
         Button(onClick = onConnectClick) {
-            Text("Se connecter")
+            Text("Demarrer une course")
         }
+
+
+
         Button(onClick = {
             val intent = Intent(deviceActivity, Historique::class.java)
             deviceActivity.startActivity(intent)
@@ -54,9 +56,18 @@ fun DeviceDetail(
             Text("Voir l'historique")
         }
 
+//        Button(onClick = {
+//            val intent = Intent(deviceActivity, NewCourse::class.java)
+//            deviceActivity.startActivity(intent)
+//        }) {
+//            Text("Démarrer une course")
+//        }
+
         Button(onClick = {
-        }){
-            Text("Démarrer une course")
+            val intent = Intent(deviceActivity, NewCourse::class.java)
+            deviceActivity.startActivity(intent)
+        }) {
+            Text("Arreter une course")
         }
         DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel
         DisplayAverageSpeed(deviceActivity, deviceInteraction)
@@ -177,12 +188,13 @@ fun Stopwatch() {
 }
 
 
-class Course(
-    val id : Int = 0,
+data class Course(
+    val id: Int = 0,
     val date: Date,
-    val maxSpeed: Float,
+    val position: String, // Vous devez obtenir la position actuelle et la convertir en String
+    var maxSpeed: Float,
     val realTimeSpeed: MutableState<Float> = mutableStateOf(0f),
-    val speedValues: MutableState<List<Int>> = mutableStateOf(listOf()) // List to store all speed values as Int
+    val speedValues: MutableState<List<Int>> = mutableStateOf(listOf())
 )
 
 class DeviceComposableInteraction(

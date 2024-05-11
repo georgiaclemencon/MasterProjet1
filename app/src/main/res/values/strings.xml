@@ -18,4 +18,5 @@
     <string name="Email">email</string>
     <string name="Send_Email">sendemail</string>
     <string name="title_activity_historique">Historique</string>
+    <string name="title_activity_new_course">NewCourse</string>
 </resources>

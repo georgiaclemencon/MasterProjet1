@@ -131,6 +131,7 @@ class AnkleBraceletParametrization : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
+
                                 Spacer(modifier = Modifier.height(30.dp))
 
                                 Button(

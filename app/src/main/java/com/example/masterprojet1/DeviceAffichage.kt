@@ -5,9 +5,14 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,7 +34,6 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.coroutines.delay
 import java.util.Date
 
-@SuppressLint("UnrememberedMutableState")
 @Composable
 fun DeviceDetail(
     deviceActivity: DeviceActivity,
@@ -37,15 +41,43 @@ fun DeviceDetail(
     course: Course,
     onConnectClick: () -> Unit
 ) {
+    // Define isRunning and time here
+    var time by remember { mutableStateOf(0) }
+    var isRunning by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxSize()
     ) {
         Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
-        Button(onClick = onConnectClick) {
-            Text("Demarrer une course")
+        Row {
+            Button(onClick = {
+                onConnectClick()
+                // Set isRunning to true when the button is clicked
+                isRunning = true
+            }) {
+                Text("Demarrer une course")
+            }
+            IconButton(onClick = {
+                val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
+                deviceActivity.startActivity(intent)
+            }) {
+                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+            }
         }
+
+        // Add this block to display the stopwatch
+        LaunchedEffect(isRunning) {
+            while (isRunning) {
+                delay(1000L)
+                time++
+            }
+        }
+        val elapsedTimeInHours = time / 3600
+        val elapsedTimeInMinutes = (time % 3600) / 60
+        val elapsedTimeInSeconds = time % 60
+        Text("Chronos: ${String.format("%02d:%02d:%02d", elapsedTimeInHours, elapsedTimeInMinutes, elapsedTimeInSeconds)}")
 
 
 
@@ -56,19 +88,17 @@ fun DeviceDetail(
             Text("Voir l'historique")
         }
 
-//        Button(onClick = {
-//            val intent = Intent(deviceActivity, NewCourse::class.java)
-//            deviceActivity.startActivity(intent)
-//        }) {
-//            Text("Démarrer une course")
-//        }
 
-        Button(onClick = {
-            val intent = Intent(deviceActivity, NewCourse::class.java)
-            deviceActivity.startActivity(intent)
-        }) {
-            Text("Arreter une course")
-        }
+
+      Button(onClick = {
+    val intent = Intent(deviceActivity, NewCourse::class.java)
+    val elapsedTime = String.format("%02d:%02d:%02d", elapsedTimeInHours, elapsedTimeInMinutes, elapsedTimeInSeconds)
+    intent.putExtra("EXTRA_CHRONOS", elapsedTime)
+    deviceActivity.startActivity(intent)
+    isRunning = false
+}) {
+    Text("Arreter une course")
+}
         DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel
         DisplayAverageSpeed(deviceActivity, deviceInteraction)
         //Stopwatch() // Affiche un chronomètre
@@ -191,7 +221,7 @@ fun Stopwatch() {
 data class Course(
     val id: Int = 0,
     val date: Date,
-    val position: String, // Vous devez obtenir la position actuelle et la convertir en String
+    var position: String, // Vous devez obtenir la position actuelle et la convertir en String
     var maxSpeed: Float,
     val realTimeSpeed: MutableState<Float> = mutableStateOf(0f),
     val speedValues: MutableState<List<Int>> = mutableStateOf(listOf())

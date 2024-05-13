@@ -1,11 +1,13 @@
 package com.example.masterprojet1
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -18,7 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,7 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -43,19 +49,37 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 
 class NewCourse : ComponentActivity() {
+    private val LOCATION_PERMISSION_REQUEST_CODE = 1
+    private var startTime = 0L
+    private var courseData: CourseData? = null
+
     private lateinit var database: FirebaseDatabase
     private var bluetoothGatt: BluetoothGatt? = null
     private lateinit var deviceInteraction: DeviceComposableInteraction
     private lateinit var course: Course
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
+    private var elapsedTime: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        elapsedTime = intent.getStringExtra("EXTRA_CHRONOS")
 
+        Intent(this, BluetoothService::class.java).also { intent ->
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+        }
+
+        startTime = System.currentTimeMillis()
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        getLastKnownLocation()
 
         database =
             FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
@@ -68,9 +92,23 @@ class NewCourse : ComponentActivity() {
             speedValues = mutableStateOf(listOf<Int>()),
             position = "0.0,0.0"
         )
+        deviceInteraction = DeviceComposableInteraction()
 
         readSpeedValuesFromDatabase()
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Permission is not granted
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            // Permission has already been granted
+            getLastKnownLocation()
+        }
 
         setContent {
             setupUI()
@@ -88,7 +126,7 @@ class NewCourse : ComponentActivity() {
 
 
         Intent(this, BluetoothService::class.java).also { intent ->
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
         }
 
 
@@ -109,40 +147,93 @@ class NewCourse : ComponentActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            LOCATION_PERMISSION_REQUEST_CODE -> {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    // Permission was granted
+                    getLastKnownLocation()
 
-fun readSpeedValuesFromDatabase() {
-    val database =
-        FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
-    val speedListRef = database.getReference("users/course/vitesse")
-
-    val speedValueListener = object : ValueEventListener {
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
-            val speedValues = dataSnapshot.getValue<List<Int>>()
-            speedValues?.let {
-                Log.d("Database", "Speed values: $it")
-                course.speedValues.value = it // Update course.speedValues
-
-                // Calculate average speed
-                val averageSpeed = it.average()
-                Log.d("Database", "Average speed: $averageSpeed")
-
-                // Calculate maximum speed
-                val maxSpeed = it.maxOrNull()
-                Log.d("Database", "Max speed: $maxSpeed")
-
-                // Update course with average and max speed
-                course.realTimeSpeed.value = averageSpeed.toFloat()
-                course.maxSpeed = maxSpeed?.toFloat() ?: 0f
+                } else {
+                    // Permission was denied. Disable the functionality that depends on this permission.
+                    Log.d("NewCourse", "Location permission was denied.")
+                }
+                return
             }
-        }
-
-        override fun onCancelled(databaseError: DatabaseError) {
-            Log.w("Database", "Failed to read speed values.", databaseError.toException())
+            // Handle other permission results
         }
     }
 
-    speedListRef.addValueEventListener(speedValueListener)
-}
+    @SuppressLint("MissingPermission")
+    private fun getLastKnownLocation() {
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    course.position = "${location.latitude},${location.longitude}"
+                    Log.d("NewCourse", "Position: ${course.position}") // Log the position
+
+                    // Get the city name
+                    try {
+                        val geocoder = Geocoder(this, Locale.getDefault())
+                        val addresses =
+                            geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        val cityName = addresses?.get(0)?.locality
+                        Log.d("NewCourse", "City: $cityName") // Log the city name
+                    } catch (e: IOException) {
+                        Log.e("NewCourse", "Failed to get city name: $e")
+                    }
+                } else {
+                    Log.d("NewCourse", "Location is null") // Log when location is null
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.d("NewCourse", "Failed to get location: $exception") // Log any exceptions
+            }
+//    // Stocker les données de la course après avoir mis à jour la position
+//    storeCourseData(course)
+    }
+
+
+    fun readSpeedValuesFromDatabase() {
+        val database =
+            FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+        val speedListRef = database.getReference("users/course/vitesse")
+
+        val speedValueListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val speedValues = dataSnapshot.getValue<List<Int>>()
+                speedValues?.let {
+                    Log.d("Database", "Speed values: $it")
+                    course.speedValues.value = it // Update course.speedValues
+
+                    // Calculate average speed
+                    val averageSpeed = it.average()
+                    Log.d("Database", "Average speed: $averageSpeed")
+
+                    // Calculate maximum speed
+                    val maxSpeed = it.maxOrNull()
+                    Log.d("Database", "Max speed: $maxSpeed")
+
+                    // Update course with average and max speed
+                    course.realTimeSpeed.value = averageSpeed.toFloat()
+                    course.maxSpeed = maxSpeed?.toFloat() ?: 0f
+
+                    storeCourseData(course)
+
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.w("Database", "Failed to read speed values.", databaseError.toException())
+            }
+        }
+
+        speedListRef.addValueEventListener(speedValueListener)
+    }
 
     data class CourseData(
         val id: Int,
@@ -153,33 +244,35 @@ fun readSpeedValuesFromDatabase() {
         val speedValues: List<Int>
     )
 
-    fun storeCourseData(course: Course) {
-        val courseData = CourseData(
-            id = course.id,
-            date = course.date,
-            position = course.position,
-            maxSpeed = course.maxSpeed,
-            realTimeSpeed = course.realTimeSpeed.value,
-            speedValues = course.speedValues.value
-        )
+fun storeCourseData(course: Course) {
+    Log.d("NewCourse", "storeCourseData called")
+    // Reste du code...
 
-        Log.d("NewCourse", "Storing course data: $courseData")
+    val courseData = CourseData(
+        id = course.id,
+        date = course.date,
+        position = course.position,
+        maxSpeed = course.maxSpeed,
+        realTimeSpeed = course.realTimeSpeed.value,
+        speedValues = course.speedValues.value
+    )
 
-        val courseRef = database.getReference("courses").child(course.id.toString())
-        courseRef.setValue(courseData)
-    }
-
-
-
-
-
-
+    val courseRef = this.database.getReference("courses").push()
+    courseRef.setValue(courseData)
+        .addOnSuccessListener {
+            Log.d("NewCourse", "Course data stored successfully")
+        }
+        .addOnFailureListener {
+            Log.e("NewCourse", "Failed to store course data: $it")
+        }
+}
 
     override fun onStop() {
         super.onStop()
-        Log.d("NewCourse", "onStop called")
-        storeCourseData(course)
-        closeBluetoothGatt()
+        if (isBound) {
+            unbindService(serviceConnection)
+            isBound = false
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -198,66 +291,74 @@ fun readSpeedValuesFromDatabase() {
     }
 
     fun setupUI() {
-    setContent {
-        MasterProjet1Theme {
-            // A surface container using the 'background' color from the theme
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+        setContent {
+            MasterProjet1Theme {
+                // A surface container using the 'background' color from the theme
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 ) {
-                    item {
-                        val date = SimpleDateFormat("HH:mm, dd MMM yyyy").format(Date())
-                        Text(text = "Nouvelle course, à $date")
 
-                        Spacer(modifier = Modifier.height(32.dp))
 
-                        // Display real-time speed
-                        val realTimeSpeed = remember { mutableStateOf("0f") }
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        item {
+                            val date = SimpleDateFormat("HH:mm, dd MMM yyyy").format(Date())
+                            Text(text = "Nouvelle course, à $date")
 
-                        // Listen for changes in course.realTimeSpeed
-                        LaunchedEffect(course.realTimeSpeed) {
-                            realTimeSpeed.value = course.realTimeSpeed.value.toString()
+                            Spacer(modifier = Modifier.height(32.dp))
+
+// Display the chronos of the course
+                            Text(
+                                text = "Chronos: ${elapsedTime ?: "00:00:00"}",
+                                style = MaterialTheme.typography.headlineMedium
+                            )
+
+// Display real-time speed
+                            val realTimeSpeed = remember { mutableStateOf("0f") }
+
+// Listen for changes in course.realTimeSpeed
+                            LaunchedEffect(course.realTimeSpeed) {
+                                realTimeSpeed.value = course.realTimeSpeed.value.toString()
+                            }
+
+                            Text(text = "Vitesse en temps réel: ${course.realTimeSpeed.value}")
+
+                            // Display speed values as a chart
+                            DisplaySpeedChart(speedValues = course.speedValues.value)
                         }
 
-                        Text(text = "Vitesse en temps réel: ${course.realTimeSpeed.value}")
+                        item {
+                            // Display course history
+                            DisplayCourseHistory(course = course)
+                        }
 
-                        // Display speed values as a chart
-                        DisplaySpeedChart(speedValues = course.speedValues.value)
+                        // Add more UI elements as needed...
                     }
-
-                    item {
-                        // Display course history
-                        DisplayCourseHistory(course = course)
-                    }
-
-                    // Add more UI elements as needed...
                 }
             }
         }
     }
-}
 
-@Composable
-fun DisplayCourseHistory(course: Course) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Historique de la course")
-        Divider(color = Color.Gray, thickness = 1.dp)
-        Text(text = "Date: ${course.date}")
-        Divider(color = Color.Gray, thickness = 1.dp)
-        Text(text = "Vitesse maximale: ${course.maxSpeed}")
-        Divider(color = Color.Gray, thickness = 1.dp)
-        Text(text = "Allure par km: jsp encore")
-        Divider(color = Color.Gray, thickness = 1.dp)
-        Text(text = "Position: ${course.position}")
-        Divider(color = Color.Gray, thickness = 1.dp)
+    @Composable
+    fun DisplayCourseHistory(course: Course) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Historique de la course")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Date: ${course.date}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Vitesse maximale: ${course.maxSpeed}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Allure par km: jsp encore")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Position: ${course.position}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+        }
     }
-}
 
     @Composable
     fun DisplaySpeedChart(speedValues: List<Int>) {
@@ -300,8 +401,6 @@ fun DisplayCourseHistory(course: Course) {
             }
         }
     }
-
-
 
 
 }

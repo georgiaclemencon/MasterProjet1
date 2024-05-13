@@ -1,5 +1,3 @@
-import javax.sound.midi.MetaMessage.META
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -50,21 +48,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    packagingOptions {
-        resources {
-            excludes.add("/META-INF/AL2.0")
-            excludes.add("/META-INF/LGPL2.1")
-            excludes.add("/META-INF/NOTICE.md")
-            excludes.add("/META-INF/LICENSE.md")
-        }
-    }
 }
 
 dependencies {
 
-    implementation("com.sun.mail:android-mail:1.6.7")
-    implementation("com.sun.mail:android-activation:1.6.7")
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.13.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation(platform("androidx.compose:compose-bom:2023.08.00"))
@@ -80,12 +68,15 @@ dependencies {
     implementation("androidx.camera:camera-core:1.3.3")
     implementation("com.google.firebase:firebase-firestore-ktx:24.11.1")
     implementation("com.google.firebase:firebase-config-ktx:21.6.3")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.08.00"))
@@ -95,7 +86,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))
     implementation("com.google.firebase:firebase-analytics")
 
-
+implementation("androidx.constraintlayout:constraintlayout:2.1.3")
 
 
 

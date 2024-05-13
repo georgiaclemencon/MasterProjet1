@@ -45,7 +45,7 @@ fun ScanActivityUI(
         Text(text = "Scan Activity", modifier = Modifier.padding(16.dp))
         Image(
             painter = painterResource(
-                id = if (scanInteraction.isSquareIcon.value) R.drawable.baseline_square_24 else R.drawable.baseline_play_arrow_24
+                id = if (scanInteraction.isSquareIcon.value) R.drawable.baseline_pause_24 else R.drawable.baseline_play_arrow_24
             ),
             contentDescription = "Scan Icon",
             modifier = Modifier

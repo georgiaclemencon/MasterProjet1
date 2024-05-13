@@ -107,7 +107,7 @@ fun BluetoothDisabledScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = R.drawable.ampoule_vide),
+            painter = painterResource(id = R.drawable.baseline_bluetooth_disabled_24),
             contentDescription = "Bluetooth Disabled Logo",
             modifier = Modifier.size(150.dp)
         )

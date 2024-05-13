@@ -135,6 +135,20 @@ class LEDsParamActivity : ComponentActivity() {
                             Spacer(modifier = Modifier.height(30.dp))
 
                             Text(
+                                text = "Time we want to take to go all the way round the track",
+                                //style = MaterialTheme.typography.h6,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                            TextField(
+                                value = "",
+                                onValueChange = { },
+                                label = { Text("Time we want to take to go all the way round the track") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(30.dp))
+
+                            Text(
                                 text = "Distance",
                                 //style = MaterialTheme.typography.h6,
                                 modifier = Modifier.padding(vertical = 8.dp)

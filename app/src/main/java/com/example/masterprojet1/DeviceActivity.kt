@@ -47,15 +47,34 @@ class DeviceActivity : ComponentActivity() {
     private var realSpeedBluetoothGattCharacteristic: BluetoothGattCharacteristic? = null
 
 
+    private var deviceConnectionService: DeviceConnectionService? = null
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            bluetoothService = (service as BluetoothService.LocalBinder).getService()
-            bluetoothService?.connectToDevice(device)
+            val binder = service as DeviceConnectionService.LocalBinder
+            deviceConnectionService = binder.getService()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            bluetoothService = null
+            deviceConnectionService = null
         }
+    }
+    override fun onStart() {
+        super.onStart()
+        Intent(this, DeviceConnectionService::class.java).also { intent ->
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+//        super.onStop()
+//        unbindService(serviceConnection)
+//        deviceConnectionService = null
+    }
+
+    fun isDeviceConnected(): Boolean {
+        return deviceConnectionService?.isDeviceConnected() ?: false
     }
 
 
@@ -228,10 +247,10 @@ class DeviceActivity : ComponentActivity() {
     }
 
 
-    override fun onStop() {
-        super.onStop()
-        closeBluetoothGatt()
-    }
+//    override fun onStop() {
+//        super.onStop()
+//        closeBluetoothGatt()
+//    }
 
     private fun closeBluetoothGatt() {
         deviceInteraction.IsConnected = false

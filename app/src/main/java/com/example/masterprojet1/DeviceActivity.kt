@@ -8,7 +8,12 @@ import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -19,16 +24,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import java.util.Date
 import java.util.UUID
-import android.content.ComponentName
-import android.content.Context
-import android.content.ServiceConnection
-import android.os.Binder
-
-import android.app.Service
-import android.content.Intent
-
-
-import android.os.IBinder
 
 @SuppressLint("MissingPermission")
 class DeviceActivity : ComponentActivity() {
@@ -40,7 +35,11 @@ class DeviceActivity : ComponentActivity() {
     private var bluetoothService: BluetoothService? = null
     private var device: BluetoothDevice? = null // Define device as a property of DeviceActivity
 
-var isRunning = true
+    private var courseId: String? = null
+
+    var isRunning = true
+    private lateinit var newCourseIntent: Intent
+
 
     //private var currentLEDStateEnum = LEDStateEnum.NONE
 
@@ -60,19 +59,22 @@ var isRunning = true
             deviceConnectionService = null
         }
     }
+
     override fun onStart() {
-        super.onStart()
-        Intent(this, DeviceConnectionService::class.java).also { intent ->
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        }
+    super.onStart()
+    Intent(this, DeviceConnectionService::class.java).also { intent ->
+        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    override fun onStop() {
-        super.onStop()
-//        super.onStop()
-//        unbindService(serviceConnection)
-//        deviceConnectionService = null
-    }
+    // Generate a unique identifier for the course
+    val database = Firebase.database
+
+// In your method
+courseId = generateUUID()
+newCourseIntent = Intent(this, NewCourse::class.java)
+newCourseIntent.putExtra("courseId", courseId) // Replace "your_course_id" with the actual course id
+    Log.e("DeviceActivity", "Putting courseId in intent: $courseId")
+}
 
     fun isDeviceConnected(): Boolean {
         return deviceConnectionService?.isDeviceConnected() ?: false
@@ -86,7 +88,7 @@ var isRunning = true
         val device = intent.getParcelableExtra<BluetoothDevice?>("device")
 
 
-        
+
 
 
 
@@ -111,14 +113,17 @@ var isRunning = true
                 speedValues = speedValues
             )
 
-            DeviceDetail(this, mutableStateOf(deviceInteraction), course) {
-                connectToDevice(device)
+            courseId?.let {
+                DeviceDetail(this, it, mutableStateOf(deviceInteraction), course){
+                    connectToDevice(device)
+                }
             }
         }
 
         val intent = Intent(this, BluetoothService::class.java)
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
+
     override fun onDestroy() {
         super.onDestroy()
         unbindService(serviceConnection)
@@ -192,18 +197,26 @@ var isRunning = true
                     if (isRunning) {
                         // Get a reference to the speed list in Firebase
                         val database = Firebase.database
-
-                        val speedListRef = database.getReference("users/course/vitesse")
+                        // Use the unique id in the reference path
+                        val speedListRef =
+                            database.getReference("users/course/${this@DeviceActivity.courseId}/vitesse")
 
                         // Add the new speed value to the list
                         speedListRef.setValue(course.speedValues.value)
-                        Log.e("DeviceActivity", "Speed values added to Firebase: ${course.speedValues.value}")
-                    }
-                    else {
-                        Log.d("onCharacteristicChanged", "isRunning is false, not adding speed value to Firebase") // Log when isRunning is false
+                        Log.e(
+                            "DeviceActivity",
+                            "Speed values added to Firebase: ${course.speedValues.value}"
+                        )
+
+
+
+                    } else {
+                        Log.d(
+                            "onCharacteristicChanged",
+                            "isRunning is false, not adding speed value to Firebase"
+                        ) // Log when isRunning is false
                     }
                 } else {
-
                     Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")
                 }
             }
@@ -261,7 +274,9 @@ var isRunning = true
         bluetoothGatt = null
     }
 
-
+    fun generateUUID(): String {
+        return UUID.randomUUID().toString()
+    }
 
 
 

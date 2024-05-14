@@ -359,4 +359,12 @@ class AnkleBraceletParametrization : ComponentActivity() {
             }
         }
     }
+//    fun writeData() {
+//        val minSpeed = minSpeed.toInt()
+//        val maxSpeed = maxSpeed.toInt()
+//        val buzzer = checkedState
+//        val heartRateSensor = checkedStatetwo
+//
+//        deviceConnectionService?.writeData(minSpeed, maxSpeed, buzzer, heartRateSensor)
+//    }
 }

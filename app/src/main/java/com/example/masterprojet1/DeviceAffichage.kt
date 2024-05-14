@@ -4,9 +4,11 @@ package com.example.masterprojet1
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -23,7 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStartAxis
@@ -37,6 +43,7 @@ import java.util.Date
 @Composable
 fun DeviceDetail(
     deviceActivity: DeviceActivity,
+    courseId: String,
     deviceInteraction: MutableState<DeviceComposableInteraction>,
     course: Course,
     onConnectClick: () -> Unit
@@ -48,62 +55,95 @@ fun DeviceDetail(
     Column(
         modifier = Modifier
             .padding(16.dp)
-            .fillMaxSize()
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally // Centrer horizontalement tous les éléments
     ) {
         Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
-        Row {
-            Button(onClick = {
-                onConnectClick()
-                // Set isRunning to true when the button is clicked
-                isRunning = true
-            }) {
+        Row(
+            modifier = Modifier.fillMaxWidth(), // Prendre toute la largeur disponible
+            horizontalArrangement = Arrangement.Center // Centrer horizontalement les éléments dans la rangée
+        ) {
+            Button(
+                onClick = {
+                    onConnectClick()
+                    // Set isRunning to true when the button is clicked
+                    isRunning = true
+                },
+                modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
+            ) {
                 Text("Demarrer une course")
             }
-            IconButton(onClick = {
-                val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
-                deviceActivity.startActivity(intent)
-            }) {
+            IconButton(
+                onClick = {
+                    val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
+                    deviceActivity.startActivity(intent)
+                },
+                modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
+            ) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings")
             }
         }
 
-        // Add this block to display the stopwatch
         LaunchedEffect(isRunning) {
             while (isRunning) {
-                delay(1000L)
+                delay(1000L) // delay for 1 second
                 time++
             }
         }
         val elapsedTimeInHours = time / 3600
         val elapsedTimeInMinutes = (time % 3600) / 60
         val elapsedTimeInSeconds = time % 60
-        Text("Chronos: ${String.format("%02d:%02d:%02d", elapsedTimeInHours, elapsedTimeInMinutes, elapsedTimeInSeconds)}")
+        val elapsedTimeInMilliseconds = (time * 1000) % 1000
+        Text(
+            "Chronos: ${
+                String.format(
+                    "%02d:%02d:%02d:%03d",
+                    elapsedTimeInHours,
+                    elapsedTimeInMinutes,
+                    elapsedTimeInSeconds,
+                    elapsedTimeInMilliseconds
+                )
+            }",
+            style = TextStyle(
+                fontSize = 35.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        )
 
-
-
-        Button(onClick = {
-            val intent = Intent(deviceActivity, Historique::class.java)
-            deviceActivity.startActivity(intent)
-        }) {
+        Button(
+            onClick = {
+                val intent = Intent(deviceActivity, Historique::class.java)
+                deviceActivity.startActivity(intent)
+            },
+            modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
+        ) {
             Text("Voir l'historique")
         }
+        Button(
+            onClick = {
+                val elapsedTime = String.format(
+                    "%02d:%02d:%02d",
+                    elapsedTimeInHours,
+                    elapsedTimeInMinutes,
+                    elapsedTimeInSeconds
+                )
+                val newCourseIntent = Intent(deviceActivity, NewCourse::class.java)
+                newCourseIntent.putExtra("EXTRA_CHRONOS", elapsedTime)
+                newCourseIntent.putExtra("courseId", courseId)
 
+                deviceActivity.startActivity(newCourseIntent)
+                isRunning = false
+                deviceActivity.closeBluetoothGatt()
+            },
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text("Arreter une course")
+        }
 
-
-      Button(onClick = {
-    val intent = Intent(deviceActivity, NewCourse::class.java)
-    val elapsedTime = String.format("%02d:%02d:%02d", elapsedTimeInHours, elapsedTimeInMinutes, elapsedTimeInSeconds)
-    intent.putExtra("EXTRA_CHRONOS", elapsedTime)
-    deviceActivity.startActivity(intent)
-    isRunning = false
-}) {
-    Text("Arreter une course")
-}
         DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel
-        DisplayAverageSpeed(deviceActivity, deviceInteraction)
-        //Stopwatch() // Affiche un chronomètre
-        TestChart() // Call TestChart here
-        MyComposable(course) // Call MyComposable here
+//        DisplayAverageSpeed(deviceActivity, deviceInteraction)
+//        MyComposable(course) // Call MyComposable here
     }
 }
 
@@ -150,6 +190,7 @@ fun createLineChart(accelerometerData: MutableState<List<Int>>): @Composable () 
         }
     }
 }
+
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun MyComposable(course: Course) {
@@ -196,26 +237,26 @@ fun DisplayRealTimeSpeed(course: Course) {
 }
 
 
-@Composable
-fun Stopwatch() {
-    var time by remember { mutableStateOf(0) }
-    var isRunning by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isRunning) {
-        while (isRunning) {
-            delay(1000L)
-            time++
-        }
-    }
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = "Time: $time", modifier = Modifier.padding(16.dp))
-        Button(onClick = { isRunning = !isRunning }) {
-            Text(if (isRunning) "Stop" else "Start")
-        }
-    }
-
-}
+//@Composable
+//fun Stopwatch() {
+//    var time by remember { mutableStateOf(0) }
+//    var isRunning by remember { mutableStateOf(false) }
+//
+//    LaunchedEffect(isRunning) {
+//        while (isRunning) {
+//            delay(1000L)
+//            time++
+//        }
+//    }
+//
+//    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//        Text(text = "Time: $time", modifier = Modifier.padding(16.dp))
+//        Button(onClick = { isRunning = !isRunning }) {
+//            Text(if (isRunning) "Stop" else "Start")
+//        }
+//    }
+//
+//}
 
 
 data class Course(
@@ -231,5 +272,5 @@ class DeviceComposableInteraction(
     var IsConnected: Boolean = false,
     var deviceTitle: String = "",
 //    var realTimeSpeed: MutableState<Float> = mutableStateOf(0f),
-   // var speedValues: MutableState<List<Int>> = mutableStateOf(listOf()) // List to store all speed values as Int
+    // var speedValues: MutableState<List<Int>> = mutableStateOf(listOf()) // List to store all speed values as Int
 )

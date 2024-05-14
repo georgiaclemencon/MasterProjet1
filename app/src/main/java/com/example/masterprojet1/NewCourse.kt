@@ -319,6 +319,21 @@ fun storeCourseData(course: Course) {
                             }
 
                             Text(text = "Vitesse en temps réel: ${course.realTimeSpeed.value}")
+                            val intent = intent
+                            // Vérifiez si l'Intent contient l'extra avec la clé "vitesseMinimale"
+                            // Récupérez la valeur de l'intent sans utiliser une instruction if
+                            val vitesseMinimale = intent.getIntExtra("vitesseMinimale", 0)
+                            val vitesseMaximale = intent.getIntExtra("vitesseMaximale", 0)
+
+                            if(course.realTimeSpeed.value < vitesseMinimale){
+                                //send by ble a value to activate the buzzer
+                                //write characteristic
+                            }
+
+                            if(course.realTimeSpeed.value > vitesseMaximale){
+                                //send by ble a value to activate the buzzer
+                                //write characteristic
+                            }
 
                             // Display speed values as a chart
                             DisplaySpeedChart(speedValues = course.speedValues.value)

@@ -2,9 +2,7 @@ package com.example.masterprojet1
 
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Bundle
 import android.os.IBinder
 
 import android.content.Intent
@@ -108,7 +106,7 @@ class AnkleBraceletParametrization : ComponentActivity() {
                         TextField(
                             value = minSpeed,
                             onValueChange = { minSpeed = it },
-                            label = { Text("Vitesse minimale") },
+                            label = { Text("Minimum speed") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
@@ -116,104 +114,126 @@ class AnkleBraceletParametrization : ComponentActivity() {
                         TextField(
                             value = maxSpeed,
                             onValueChange = { maxSpeed = it },
-                            label = { Text("Vitesse maximale") },
+                            label = { Text("Maximum speed") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
 
-                        if (showAdditionalFields) {
-                            Text(
-                                text = "Cocher si vous voulez activer le buzzer",
-                                //style = MaterialTheme.typography.h6,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                            Checkbox(
-                                checked = checkedState,
-                                onCheckedChange = { checkedState = it },
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
+                        var textField1Value by remember { mutableStateOf("") }
+                        var textField2Value by remember { mutableStateOf("") }
+                        var context = LocalContext.current
+                        ModalNavigationDrawer(
+                            drawerContent = {
+                                ModalDrawerSheet {
+                                    Text("SPR MENU", modifier = Modifier.padding(16.dp))
+                                    Divider()
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "Profile") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent =
+                                                Intent(context, ProfileActivity::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "Historique") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent =
+                                                Intent(context, DeviceActivity::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "Ankle Bracelet Parametrization") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent = Intent(
+                                                context,
+                                                AnkleBraceletParametrization::class.java
+                                            )
+                                            startActivity(intent)
+                                        }
+                                    )
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "LEDs Ribbon Parametrization") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent =
+                                                Intent(context, LEDsParamActivity::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "Help") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent =
+                                                Intent(context, HelpActivity::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "Who are we ? What is SoundPaceRunners ?") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent =
+                                                Intent(context, CreatorsActivity::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                    NavigationDrawerItem(
+                                        label = { Text(text = "Contact Form") },
+                                        selected = false,
+                                        onClick = {
+                                            val intent =
+                                                Intent(context, ContactForm::class.java)
+                                            startActivity(intent)
+                                        }
+                                    )
+                                }
 
-                    var textField1Value by remember { mutableStateOf("") }
-                    var textField2Value by remember { mutableStateOf("") }
-                    var context = LocalContext.current
-                    ModalNavigationDrawer(
-                        drawerContent = {
-                            ModalDrawerSheet {
-                                Text("SPR MENU", modifier = Modifier.padding(16.dp))
-                                Divider()
-                                NavigationDrawerItem(
-                                    label = { Text(text = "Profile") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, ProfileActivity::class.java)
-                                        startActivity(intent) }
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(text = "Historique") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, DeviceActivity::class.java)
-                                        startActivity(intent) }
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(text = "Ankle Bracelet Parametrization") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, AnkleBraceletParametrization::class.java)
-                                        startActivity(intent) }
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(text = "LEDs Ribbon Parametrization") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, LEDsParamActivity::class.java)
-                                        startActivity(intent) }
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(text = "Help") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, HelpActivity::class.java)
-                                        startActivity(intent) }
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(text = "Who are we ? What is SoundPaceRunners ?") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, CreatorsActivity::class.java)
-                                        startActivity(intent) }
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(text = "Contact Form") },
-                                    selected = false,
-                                    onClick = { val intent = Intent(context, ContactForm::class.java)
-                                        startActivity(intent) }
-                                )
                             }
-
-                        }
-                    ){
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)
-                            //contentAlignment = Alignment.Center
                         ) {
-                            Column(
+                            Box(
                                 modifier = Modifier
-                                    .verticalScroll(rememberScrollState())
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                                //contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "Ankle Bracelet Parametrization",
-                                    //style = MaterialTheme.typography.h6,
+                                Column(
                                     modifier = Modifier
-                                        .padding(vertical = 8.dp)
-                                        .fillMaxWidth(), // Remplir la largeur disponible
-                                    textAlign = TextAlign.Center // Centrer horizontalement le texte
-                                )
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    Text(
+                                        text = "Ankle Bracelet Parametrization",
+                                        //style = MaterialTheme.typography.h6,
+                                        modifier = Modifier
+                                            .padding(vertical = 8.dp)
+                                            .fillMaxWidth(), // Remplir la largeur disponible
+                                        textAlign = TextAlign.Center // Centrer horizontalement le texte
+                                    )
 
-                                Divider(
-                                    color = Color.White,
-                                    thickness = 2.dp,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                    var vitesseminimale = 20
+                                    var vitessemaximale = 26
+                                    // Créez un Intent en utilisant le constructeur approprié pour Kotlin
+                                    val intent = Intent(
+                                        this@AnkleBraceletParametrization,
+                                        NewCourse::class.java
+                                    ).apply {
+                                        // Ajoutez la valeur en tant qu'extra à l'Intent
+                                        putExtra("vitesseMinimale", vitesseminimale)
+                                        putExtra("vitesseMaximale", vitessemaximale)
+                                    }
 
+                                    Divider(
+                                        color = Color.White,
+                                        thickness = 2.dp,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
 
-                                Spacer(modifier = Modifier.height(30.dp))
+                                    Spacer(modifier = Modifier.height(30.dp))
 
                                 Button(
                                     onClick = { showAdditionalFields = !showAdditionalFields },
@@ -259,72 +279,76 @@ class AnkleBraceletParametrization : ComponentActivity() {
     Text("OK, faire la course")
 }
 
-                        Text(
-                            text = "L'accélérometre est activé par défaut, obligatoire pour les différentes mesures",
-                            //style = MaterialTheme.typography.h6,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-
-                                Button(
-                                    onClick = { showAdditionalFieldstwo = !showAdditionalFieldstwo },
-                                    modifier = Modifier.padding(top = 16.dp)
-                                        .align(Alignment.CenterHorizontally)
-                                ) {
                                     Text(
-                                        text = if (showAdditionalFieldstwo) "Heart Beat sensor Parametrization available" else "Click to configure the heart beat sensor",
-                                        textAlign = TextAlign.Center // Centrer le texte
+                                        text = "L'accélérometre est activé par défaut, obligatoire pour les différentes mesures",
+                                        //style = MaterialTheme.typography.h6,
+                                        modifier = Modifier.padding(vertical = 8.dp)
                                     )
-                                }
 
-                                Spacer(modifier = Modifier.height(30.dp))
+                                    Button(
+                                        onClick = {
+                                            showAdditionalFieldstwo = !showAdditionalFieldstwo
+                                        },
+                                        modifier = Modifier
+                                            .padding(top = 16.dp)
+                                            .align(Alignment.CenterHorizontally)
+                                    ) {
+                                        Text(
+                                            text = if (showAdditionalFieldstwo) "Heart Beat sensor Parametrization available" else "Click to configure the heart beat sensor",
+                                            textAlign = TextAlign.Center // Centrer le texte
+                                        )
+                                    }
 
-                                if (showAdditionalFieldstwo) {
+                                    Spacer(modifier = Modifier.height(30.dp))
+
+                                    if (showAdditionalFieldstwo) {
+                                        Text(
+                                            text = "Tick if you want to activate the heart beat sensor",
+                                            modifier = Modifier.padding(vertical = 8.dp),
+                                            textAlign = TextAlign.Center // Centrer le texte
+                                        )
+                                        Checkbox(
+                                            checked = checkedState,
+                                            onCheckedChange = { checkedState = it },
+                                            modifier = Modifier
+                                                .padding(bottom = 16.dp)
+                                                .align(Alignment.CenterHorizontally)
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(30.dp))
+
+                                    Divider(
+                                        color = Color.White,
+                                        thickness = 2.dp,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
                                     Text(
-                                        text = "Tick if you want to activate the heart beat sensor",
+                                        text = "L'accéléromètre est activé par défaut, obligatoire pour les différentes mesures",
                                         modifier = Modifier.padding(vertical = 8.dp),
                                         textAlign = TextAlign.Center // Centrer le texte
                                     )
-                                    Checkbox(
-                                        checked = checkedState,
-                                        onCheckedChange = { checkedState = it },
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Button(
+                                        onClick = {
+                                            Toast.makeText(
+                                                applicationContext,
+                                                "Data sent",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
                                         modifier = Modifier
-                                            .padding(bottom = 16.dp)
-                                            .align(Alignment.CenterHorizontally)
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(30.dp))
-
-                                Divider(
-                                    color = Color.White,
-                                    thickness = 2.dp,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Text(
-                                    text = "L'accéléromètre est activé par défaut, obligatoire pour les différentes mesures",
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                    textAlign = TextAlign.Center // Centrer le texte
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Button(
-                                    onClick = {
-                                        Toast.makeText(
-                                            applicationContext,
-                                            "Data sent",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    },
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(0.8f) // Utilisation du poids pour spécifier la largeur
-                                        .align(Alignment.CenterHorizontally) // Centrer horizontalement
-                                ) {
-                                    Text(text = "Send parameters")
+                                            .padding(16.dp)
+                                            .fillMaxWidth(0.8f) // Utilisation du poids pour spécifier la largeur
+                                            .align(Alignment.CenterHorizontally) // Centrer horizontalement
+                                    ) {
+                                        Text(text = "Send parameters")
+                                    }
                                 }
                             }
                         }
@@ -334,7 +358,5 @@ class AnkleBraceletParametrization : ComponentActivity() {
                 }
             }
         }
-
-
     }
 }

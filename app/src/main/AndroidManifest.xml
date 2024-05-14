@@ -91,6 +91,11 @@
             android:theme="@style/Theme.MasterProjet1" />
         <activity
             android:name=".ScanActivity"
+            android:exported="false"
+            android:label="@string/title_activity_scan"
+            android:theme="@style/Theme.MasterProjet1" />
+        <activity
+            android:name=".SplashActivity"
             android:exported="true"
             android:label="@string/title_activity_scan"
             android:theme="@style/Theme.MasterProjet1">

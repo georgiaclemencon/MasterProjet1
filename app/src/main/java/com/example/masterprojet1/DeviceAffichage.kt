@@ -23,7 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStartAxis
@@ -77,7 +80,20 @@ fun DeviceDetail(
         val elapsedTimeInHours = time / 3600
         val elapsedTimeInMinutes = (time % 3600) / 60
         val elapsedTimeInSeconds = time % 60
-        Text("Chronos: ${String.format("%02d:%02d:%02d", elapsedTimeInHours, elapsedTimeInMinutes, elapsedTimeInSeconds)}")
+        Text(
+            "Chronos: ${
+                String.format(
+                    "%02d:%02d:%02d",
+                    elapsedTimeInHours,
+                    elapsedTimeInMinutes,
+                    elapsedTimeInSeconds
+                )
+            }",
+            style = TextStyle(
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold
+            )
+        )
 
 
 
@@ -90,20 +106,24 @@ fun DeviceDetail(
 
 
 
-      Button(onClick = {
+
+ Button(onClick = {
     val intent = Intent(deviceActivity, NewCourse::class.java)
     val elapsedTime = String.format("%02d:%02d:%02d", elapsedTimeInHours, elapsedTimeInMinutes, elapsedTimeInSeconds)
     intent.putExtra("EXTRA_CHRONOS", elapsedTime)
     deviceActivity.startActivity(intent)
-    isRunning = false
+    isRunning = false // Set isRunning to false when the button is clicked
+    deviceActivity.closeBluetoothGatt() // Close the Bluetooth GATT connection
 }) {
     Text("Arreter une course")
 }
+
+
         DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel
         DisplayAverageSpeed(deviceActivity, deviceInteraction)
-        //Stopwatch() // Affiche un chronomètre
-        TestChart() // Call TestChart here
-        MyComposable(course) // Call MyComposable here
+//        Stopwatch() // Affiche un chronomètre
+//        TestChart() // Call TestChart here
+       MyComposable(course) // Call MyComposable here
     }
 }
 
@@ -150,6 +170,7 @@ fun createLineChart(accelerometerData: MutableState<List<Int>>): @Composable () 
         }
     }
 }
+
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun MyComposable(course: Course) {
@@ -231,5 +252,5 @@ class DeviceComposableInteraction(
     var IsConnected: Boolean = false,
     var deviceTitle: String = "",
 //    var realTimeSpeed: MutableState<Float> = mutableStateOf(0f),
-   // var speedValues: MutableState<List<Int>> = mutableStateOf(listOf()) // List to store all speed values as Int
+    // var speedValues: MutableState<List<Int>> = mutableStateOf(listOf()) // List to store all speed values as Int
 )

@@ -137,17 +137,13 @@ class AnkleBraceletParametrization : ComponentActivity() {
                         }
 
                         Button(
-                            onClick = {
-                                val intent = Intent(
-                                    this@AnkleBraceletParametrization,
-                                    DeviceActivity::class.java
-                                )
-                                startActivity(intent)
-                            },
-                            modifier = Modifier.padding(top = 16.dp)
-                        ) {
-                            Text("OK, faire la course")
-                        }
+    onClick = {
+        finish()
+    },
+    modifier = Modifier.padding(top = 16.dp)
+) {
+    Text("OK, faire la course")
+}
 
                         Text(
                             text = "L'accélérometre est activé par défaut, obligatoire pour les différentes mesures",
@@ -158,5 +154,7 @@ class AnkleBraceletParametrization : ComponentActivity() {
                 }
             }
         }
+
+
     }
 }

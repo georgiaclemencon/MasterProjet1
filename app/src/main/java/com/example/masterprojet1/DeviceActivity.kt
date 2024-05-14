@@ -40,7 +40,7 @@ class DeviceActivity : ComponentActivity() {
     private var bluetoothService: BluetoothService? = null
     private var device: BluetoothDevice? = null // Define device as a property of DeviceActivity
 
-
+var isRunning = true
 
     //private var currentLEDStateEnum = LEDStateEnum.NONE
 
@@ -53,6 +53,7 @@ class DeviceActivity : ComponentActivity() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as DeviceConnectionService.LocalBinder
             deviceConnectionService = binder.getService()
+            Log.e("DeviceActivity", "Service connected")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -170,40 +171,42 @@ class DeviceActivity : ComponentActivity() {
                 }
             }
 
- override fun onCharacteristicChanged(
-    gatt: BluetoothGatt,
-    characteristic: BluetoothGattCharacteristic
-) {
-    super.onCharacteristicChanged(gatt, characteristic)
-    val intValue =
-        characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
-    Log.d("CharacteristicValue", "UUID: ${characteristic.uuid}, Value: $intValue")
+            override fun onCharacteristicChanged(
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic
+            ) {
+                super.onCharacteristicChanged(gatt, characteristic)
+                val intValue =
+                    characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+                Log.d("CharacteristicValue", "UUID: ${characteristic.uuid}, Value: $intValue")
 
-    if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
-        val newSpeed = intValue.toFloat()
-        course.realTimeSpeed.value = newSpeed // Update the value
-        course.speedValues.value =
-            course.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
+                if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
+                    val newSpeed = intValue.toFloat()
+                    course.realTimeSpeed.value = newSpeed // Update the value
+                    course.speedValues.value =
+                        course.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
 
-        Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
+                    Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
 
-        // Send a broadcast with the updated realTimeSpeed
-        val intent = Intent("com.example.masterprojet1.REAL_TIME_SPEED_UPDATE")
-        intent.putExtra("realTimeSpeed", course.realTimeSpeed.value)
-        sendBroadcast(intent)
+                    // Only update speedValues in Firebase if isRunning is true
+                    if (isRunning) {
+                        // Get a reference to the speed list in Firebase
+                        val database = Firebase.database
 
-        // Get a reference to the speed list in Firebase
-        val database = Firebase.database
+                        val speedListRef = database.getReference("users/course/vitesse")
 
-        val speedListRef = database.getReference("users/course/vitesse")
+                        // Add the new speed value to the list
+                        speedListRef.setValue(course.speedValues.value)
+                        Log.e("DeviceActivity", "Speed values added to Firebase: ${course.speedValues.value}")
+                    }
+                    else {
+                        Log.d("onCharacteristicChanged", "isRunning is false, not adding speed value to Firebase") // Log when isRunning is false
+                    }
+                } else {
 
-        // Add the new speed value to the list
-        speedListRef.setValue(course.speedValues.value)
-        Log.e("DeviceActivity", "Speed values added to Firebase: ${course.speedValues.value}")
-    } else {
-        Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")
-    }
-}
+                    Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")
+                }
+            }
         })
         bluetoothGatt?.connect()
     }
@@ -252,7 +255,7 @@ class DeviceActivity : ComponentActivity() {
 //        closeBluetoothGatt()
 //    }
 
-    private fun closeBluetoothGatt() {
+    fun closeBluetoothGatt() {
         deviceInteraction.IsConnected = false
         bluetoothGatt?.close()
         bluetoothGatt = null

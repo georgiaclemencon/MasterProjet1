@@ -43,18 +43,47 @@ class ActivityMenu : ComponentActivity() {
                                 Text("SPR MENU", modifier = Modifier.padding(16.dp))
                                 Divider()
                                 NavigationDrawerItem(
-                                    label = { Text(text = "Contact") },
+                                    label = { Text(text = "Profile") },
                                     selected = false,
-                                    onClick = { val intent = Intent(context, ContactForm::class.java)
+                                    onClick = { val intent = Intent(context, ProfileActivity::class.java)
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(
-                                    label = { Text(text = "LED parametrization") },
+                                    label = { Text(text = "Historique") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, DeviceActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Ankle Bracelet Parametrization") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, AnkleBraceletParametrization::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "LEDs Ribbon Parametrization") },
                                     selected = false,
                                     onClick = { val intent = Intent(context, LEDsParamActivity::class.java)
                                         startActivity(intent) }
                                 )
-                                // ...other drawer items
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Help") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, HelpActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Who are we ? What is SoundPaceRunners ?") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, CreatorsActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Contact Form") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, ContactForm::class.java)
+                                        startActivity(intent) }
+                                )
                             }
                         }
                     ) {

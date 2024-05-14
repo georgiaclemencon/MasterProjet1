@@ -1,63 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="10dp"
-    tools:context=".MainActivity">
+    android:layout_margin="10dp">
 
     <EditText
-        android:inputType="textEmailAddress"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         android:id="@+id/etRecipientEmail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:hint="@string/Email"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:autofillHints="" />
-
-    <EditText
         android:inputType="textEmailAddress"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:id="@+id/etDestinarytEmail"
-        android:hint="@string/adresse_mail_du_destinataire"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:autofillHints="" />
 
     <EditText
-        app:layout_constraintTop_toBottomOf="@+id/etRecipientEmail"
-        android:id="@+id/etSubject"
-        android:hint="@string/subject"
-        android:layout_width="match_parent"
+        android:id="@+id/etDestinarytEmail"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:autofillHints=""
-        android:inputType="text"
-        tools:ignore="TextFields" />
+        android:hint="@string/adresse_mail_du_destinataire"
+        android:inputType="textEmailAddress"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etRecipientEmail"
+        android:layout_marginTop="16dp"
+        android:autofillHints="" />
 
     <EditText
-        android:lines="3"
-        app:layout_constraintTop_toBottomOf="@+id/etSubject"
-        android:id="@+id/etMessage"
-        android:hint="@string/Message"
-        android:layout_width="match_parent"
+        android:id="@+id/etSubject"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:autofillHints=""
+        android:hint="@string/subject"
         android:inputType="text"
-        tools:ignore="TextFields" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etDestinarytEmail"
+        android:layout_marginTop="16dp"
+        android:autofillHints=""/>
+
+    <EditText
+        android:id="@+id/etMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:lines="3"
+        android:hint="@string/Message"
+        android:inputType="text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/etSubject"
+        android:layout_marginTop="16dp"
+        android:autofillHints=""/>
 
     <Button
         android:id="@+id/btnSendEmail"
-        android:layout_margin="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/Send_Email"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etMessage"
-        android:text="@string/Send_Email"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        app:layout_constraintTop_toBottomOf="@id/etMessage"
+        android:layout_marginTop="20dp" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

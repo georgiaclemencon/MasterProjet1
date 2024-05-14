@@ -136,7 +136,7 @@ class LoginActivity : ComponentActivity() {
     }
 
         fun StartActivity() {
-        val intent = Intent(this, ActivityMenu::class.java)
+        val intent = Intent(this, ScanActivity::class.java)
         startActivity(intent)
     }
 

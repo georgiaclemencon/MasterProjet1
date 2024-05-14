@@ -1,6 +1,5 @@
 package com.example.masterprojet1
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
 import android.content.ComponentName
@@ -32,8 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -49,6 +47,7 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLa
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -68,35 +67,51 @@ class NewCourse : ComponentActivity() {
 
     private var elapsedTime: String? = null
 
+
+    private var courseId: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    elapsedTime = intent.getStringExtra("EXTRA_CHRONOS")
+        super.onCreate(savedInstanceState)
 
-    Intent(this, BluetoothService::class.java).also { intent ->
-        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
-    }
+        courseId = intent.getStringExtra("courseId")
 
-    startTime = System.currentTimeMillis()
 
-    fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        Log.d("NewCourse", "Got courseId from intent: $courseId")
 
-    database =
-        FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
 
-    // Initialize the course
-    course = Course(
-        date = Date(),
-        maxSpeed = 0f,
-        realTimeSpeed = mutableStateOf(0f),
-        speedValues = mutableStateOf(listOf<Int>()),
-        position = "0.0,0.0"
-    )
-    deviceInteraction = DeviceComposableInteraction()
+        elapsedTime = intent.getStringExtra("EXTRA_CHRONOS")
 
-    readSpeedValuesFromDatabase()
+        Intent(this, BluetoothService::class.java).also { intent ->
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+        }
 
-    getLastKnownLocation() // Now it's safe to call this method
+        startTime = System.currentTimeMillis()
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        database =
+            FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+
+        // Initialize the course
+        course = Course(
+            date = Date(),
+            maxSpeed = 0f,
+            realTimeSpeed = mutableStateOf(0f),
+            speedValues = mutableStateOf(listOf<Int>()),
+            position = "0.0,0.0"
+        )
+
+        deviceInteraction = DeviceComposableInteraction()
+
+        lifecycleScope.launch {
+            readSpeedValuesFromDatabase()
+            getLastKnownLocation()
+            setupUI()
+        }
+        readSpeedValuesFromDatabase()
+        storeCourseData(course, elapsedTime)
+
+        getLastKnownLocation() // Now it's safe to call this method
 
 
         setContent {
@@ -156,34 +171,39 @@ class NewCourse : ComponentActivity() {
             // Handle other permission results
         }
     }
-@SuppressLint("MissingPermission")
-private fun getLastKnownLocation() {
-    fusedLocationClient.lastLocation
-        .addOnSuccessListener { location ->
-            if (location != null) {
-                // Get the city name
-                try {
-                    val geocoder = Geocoder(this, Locale.getDefault())
-                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    val cityName = addresses?.get(0)?.locality
-                    course.position = cityName ?: "Unknown location" // Set course.position to the city name
-                    Log.d("NewCourse", "City: $cityName") // Log the city name
-                } catch (e: IOException) {
-                    Log.e("NewCourse", "Failed to get city name: $e")
+
+    @SuppressLint("MissingPermission")
+    private fun getLastKnownLocation() {
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    // Get the city name
+                    try {
+                        val geocoder = Geocoder(this, Locale.getDefault())
+                        val addresses =
+                            geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        val cityName = addresses?.get(0)?.locality
+                        course.position =
+                            cityName ?: "Unknown location" // Set course.position to the city name
+                        Log.d("NewCourse", "City: $cityName") // Log the city name
+                    } catch (e: IOException) {
+                        Log.e("NewCourse", "Failed to get city name: $e")
+                    }
+                } else {
+                    Log.d("NewCourse", "Location is null") // Log when location is null
                 }
-            } else {
-                Log.d("NewCourse", "Location is null") // Log when location is null
             }
-        }
-        .addOnFailureListener { exception ->
-            Log.d("NewCourse", "Failed to get location: $exception") // Log any exceptions
-        }
-}
+            .addOnFailureListener { exception ->
+                Log.d("NewCourse", "Failed to get location: $exception") // Log any exceptions
+            }
+    }
 
 
     fun readSpeedValuesFromDatabase() {
+        Log.e("testtt", "Course ID: $courseId")
 
-        val speedListRef = database.getReference("users/course/vitesse")
+
+        val speedListRef = database.getReference("users/course/$courseId/vitesse")
 
         val speedValueListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -205,7 +225,6 @@ private fun getLastKnownLocation() {
                     course.maxSpeed = maxSpeed?.toFloat() ?: 0f
 
 
-
                 }
             }
 
@@ -217,47 +236,48 @@ private fun getLastKnownLocation() {
         speedListRef.addValueEventListener(speedValueListener)
     }
 
- data class CourseData(
-    val id: Int,
-    val date: Date,
-    val position: String,
-    val maxSpeed: Float,
-    val chronos: String,
-    val realTimeSpeed: Float,
-    val speedValues: List<Int>
-) {
-    val averageSpeed: Float
-        get() = if (speedValues.isNotEmpty()) speedValues.average().toFloat() else 0f
+    data class CourseData(
+        val id: Int,
+        val date: Date,
+        val position: String,
+        val maxSpeed: Float,
+        val chronos: String,
+        val realTimeSpeed: Float,
+        val speedValues: List<Int>
+    ) {
+        val averageSpeed: Float
+            get() = if (speedValues.isNotEmpty()) speedValues.average().toFloat() else 0f
 
-    val pacePerKm: Float
-        get() = if (averageSpeed != 0f) 60 / averageSpeed else 0f
+        val pacePerKm: Float
+            get() = if (averageSpeed != 0f) 60 / averageSpeed else 0f
 
-    val maxSpeedValue: Float
-        get() = speedValues.maxOrNull()?.toFloat() ?: 0f
-}
+        val maxSpeedValue: Float
+            get() = speedValues.maxOrNull()?.toFloat() ?: 0f
+    }
 
-fun storeCourseData(course: Course) {
-    val courseData = CourseData(
-        id = course.id,
-        date = course.date,
-        position = course.position,
-        maxSpeed = course.maxSpeed,
-        chronos = elapsedTime ?: "00:00:00",
-        realTimeSpeed = course.realTimeSpeed.value,
-        speedValues = course.speedValues.value
-    )
+    fun storeCourseData(course: Course, elapsedTime: String?) {
+        var courseId = intent.getStringExtra("courseId")
+        val courseData = CourseData(
+            id = course.id,
+            date = course.date,
+            position = course.position,
+            maxSpeed = course.maxSpeed,
+            chronos = elapsedTime ?: "00:00:00",
+            realTimeSpeed = course.realTimeSpeed.value,
+            speedValues = course.speedValues.value
+        )
 
+        // Utilisez courseId pour créer une référence unique pour chaque course
+        val courseRef = database.getReference("users/course/$courseId/donnees_course")
 
-
-    val courseRef = database.getReference("users/course")
-    courseRef.setValue(courseData)
-        .addOnSuccessListener {
-            Log.d("NewCourse", "Course data stored successfully")
-        }
-        .addOnFailureListener {
-            Log.e("NewCourse", "Failed to store course data: $it")
-        }
-}
+        courseRef.setValue(courseData)
+            .addOnSuccessListener {
+                Log.d("NewCourse", "Course data stored successfully")
+            }
+            .addOnFailureListener {
+                Log.e("NewCourse", "Failed to store course data: $it")
+            }
+    }
 
     override fun onStop() {
         super.onStop()
@@ -319,21 +339,6 @@ fun storeCourseData(course: Course) {
                             }
 
                             Text(text = "Vitesse en temps réel: ${course.realTimeSpeed.value}")
-                            val intent = intent
-                            // Vérifiez si l'Intent contient l'extra avec la clé "vitesseMinimale"
-                            // Récupérez la valeur de l'intent sans utiliser une instruction if
-                            val vitesseMinimale = intent.getIntExtra("vitesseMinimale", 0)
-                            val vitesseMaximale = intent.getIntExtra("vitesseMaximale", 0)
-
-                            if(course.realTimeSpeed.value < vitesseMinimale){
-                                //send by ble a value to activate the buzzer
-                                //write characteristic
-                            }
-
-                            if(course.realTimeSpeed.value > vitesseMaximale){
-                                //send by ble a value to activate the buzzer
-                                //write characteristic
-                            }
 
                             // Display speed values as a chart
                             DisplaySpeedChart(speedValues = course.speedValues.value)
@@ -342,7 +347,8 @@ fun storeCourseData(course: Course) {
                         item {
                             // Display course history
 
-                                DisplayCourseHistory(courseData = CourseData(
+                            DisplayCourseHistory(
+                                courseData = CourseData(
                                     id = course.id,
                                     date = course.date,
                                     position = course.position,
@@ -350,7 +356,8 @@ fun storeCourseData(course: Course) {
                                     chronos = elapsedTime ?: "00:00:00",
                                     realTimeSpeed = course.realTimeSpeed.value,
                                     speedValues = course.speedValues.value
-                                ))
+                                )
+                            )
 
                         }
 
@@ -361,29 +368,29 @@ fun storeCourseData(course: Course) {
         }
     }
 
-   @Composable
-fun DisplayCourseHistory(courseData: CourseData) {
-    Log.d("DisplayCourseHistory", "Displaying course history for courseData: $courseData")
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Historique de la course")
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-        Text(text = "Date: ${courseData.date}")
-        Log.d("DisplayCourseHistory", "Date: ${courseData.date}")
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-        Text(text = "Vitesse maximale: ${courseData.maxSpeedValue}")
-        Log.d("DisplayCourseHistory", "Vitesse maximale: ${courseData.maxSpeedValue}")
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-        Text(text = "Vitesse moyenne: ${courseData.averageSpeed}")
-        Log.d("DisplayCourseHistory", "Vitesse moyenne: ${courseData.averageSpeed}")
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-        Text(text = "Allure par km: ${courseData.pacePerKm}")
-        Log.d("DisplayCourseHistory", "Allure par km: ${courseData.pacePerKm}")
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-        Text(text = "Position: ${courseData.position}")
-        Log.d("DisplayCourseHistory", "Position: ${courseData.position}")
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+    @Composable
+    fun DisplayCourseHistory(courseData: CourseData) {
+        Log.d("DisplayCourseHistory", "Displaying course history for courseData: $courseData")
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Historique de la course")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Date: ${courseData.date}")
+            Log.d("DisplayCourseHistory", "Date: ${courseData.date}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Vitesse maximale: ${courseData.maxSpeedValue}")
+            Log.d("DisplayCourseHistory", "Vitesse maximale: ${courseData.maxSpeedValue}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Vitesse moyenne: ${courseData.averageSpeed}")
+            Log.d("DisplayCourseHistory", "Vitesse moyenne: ${courseData.averageSpeed}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Allure par km: ${courseData.pacePerKm}")
+            Log.d("DisplayCourseHistory", "Allure par km: ${courseData.pacePerKm}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+            Text(text = "Position: ${courseData.position}")
+            Log.d("DisplayCourseHistory", "Position: ${courseData.position}")
+            HorizontalDivider(thickness = 1.dp, color = Color.Gray)
+        }
     }
-}
 
     @Composable
     fun DisplaySpeedChart(speedValues: List<Int>) {

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,12 +53,14 @@ fun DeviceDetail(
     var time by remember { mutableStateOf(0) }
     var isRunning by remember { mutableStateOf(false) }
 
+
     Column(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally // Centrer horizontalement tous les éléments
     ) {
+
         Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
         Row(
             modifier = Modifier.fillMaxWidth(), // Prendre toute la largeur disponible
@@ -202,7 +205,7 @@ fun MyComposable(course: Course) {
         Log.d("MyComposable", "speedValues is not empty") // Log ajouté
         course.speedValues // Use speedValues if it's not empty
     }
-    val lineChart = createLineChart(speedValues) // Use speedValues for the chart data
+    val lineChart = createLineChart(speedValues as MutableState<List<Int>>) // Use speedValues for the chart data //ici a change si ca couille le graphique
 
     lineChart()
 }
@@ -233,7 +236,11 @@ fun DisplayRealTimeSpeed(course: Course) {
     LaunchedEffect(speed) {
         // This block will be recomposed whenever speed changes
     }
-    Text("Vitesse en temps réel : ${speed.toInt()}")
+   Text(
+    text = "Vitesse en temps réel : ${speed.toFloat()} m/s",
+    style = MaterialTheme.typography.bodyLarge
+)
+
 }
 
 
@@ -259,13 +266,15 @@ fun DisplayRealTimeSpeed(course: Course) {
 //}
 
 
+
+
 data class Course(
     val id: Int = 0,
     val date: Date,
     var position: String, // Vous devez obtenir la position actuelle et la convertir en String
     var maxSpeed: Float,
     val realTimeSpeed: MutableState<Float> = mutableStateOf(0f),
-    val speedValues: MutableState<List<Int>> = mutableStateOf(listOf())
+    val speedValues: MutableState<List<Float>> = mutableStateOf(listOf())
 )
 
 class DeviceComposableInteraction(

@@ -97,7 +97,7 @@ class NewCourse : ComponentActivity() {
             date = Date(),
             maxSpeed = 0f,
             realTimeSpeed = mutableStateOf(0f),
-            speedValues = mutableStateOf(listOf<Int>()),
+            speedValues = mutableStateOf(listOf<Float>()),
             position = "0.0,0.0"
         )
 
@@ -109,7 +109,7 @@ class NewCourse : ComponentActivity() {
             setupUI()
         }
         readSpeedValuesFromDatabase()
-        storeCourseData(course, elapsedTime)
+//        storeCourseData(course, elapsedTime)
 
         getLastKnownLocation() // Now it's safe to call this method
 
@@ -207,7 +207,7 @@ class NewCourse : ComponentActivity() {
 
         val speedValueListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val speedValues = dataSnapshot.getValue<List<Int>>()
+                val speedValues = dataSnapshot.getValue<List<Float>>()
                 speedValues?.let {
                     Log.d("Database", "Speed values: $it")
                     course.speedValues.value = it // Update course.speedValues
@@ -243,7 +243,7 @@ class NewCourse : ComponentActivity() {
         val maxSpeed: Float,
         val chronos: String,
         val realTimeSpeed: Float,
-        val speedValues: List<Int>
+        val speedValues: List<Float>
     ) {
         val averageSpeed: Float
             get() = if (speedValues.isNotEmpty()) speedValues.average().toFloat() else 0f
@@ -264,7 +264,7 @@ class NewCourse : ComponentActivity() {
             maxSpeed = course.maxSpeed,
             chronos = elapsedTime ?: "00:00:00",
             realTimeSpeed = course.realTimeSpeed.value,
-            speedValues = course.speedValues.value
+            speedValues = course.speedValues.value.map { it.toFloat() }
         )
 
         // Utilisez courseId pour créer une référence unique pour chaque course
@@ -338,10 +338,10 @@ class NewCourse : ComponentActivity() {
                                 realTimeSpeed.value = course.realTimeSpeed.value.toString()
                             }
 
-                            Text(text = "Vitesse en temps réel: ${course.realTimeSpeed.value}")
+                            Text(text = "Vitesse moyenne: ${course.realTimeSpeed.value}")
 
                             // Display speed values as a chart
-                            DisplaySpeedChart(speedValues = course.speedValues.value)
+                            DisplaySpeedChart(speedValues = course.speedValues.value.map { it.toInt() })
                         }
 
                         item {
@@ -355,7 +355,7 @@ class NewCourse : ComponentActivity() {
                                     maxSpeed = course.maxSpeed,
                                     chronos = elapsedTime ?: "00:00:00",
                                     realTimeSpeed = course.realTimeSpeed.value,
-                                    speedValues = course.speedValues.value
+                                    speedValues = course.speedValues.value.map { it.toFloat() }
                                 )
                             )
 
@@ -377,19 +377,20 @@ class NewCourse : ComponentActivity() {
             Text(text = "Date: ${courseData.date}")
             Log.d("DisplayCourseHistory", "Date: ${courseData.date}")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-            Text(text = "Vitesse maximale: ${courseData.maxSpeedValue}")
-            Log.d("DisplayCourseHistory", "Vitesse maximale: ${courseData.maxSpeedValue}")
+            Text(text = "Vitesse maximale: ${courseData.maxSpeedValue} m/s")
+            Log.d("DisplayCourseHistory", "Vitesse maximale: ${courseData.maxSpeedValue} m/s")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-            Text(text = "Vitesse moyenne: ${courseData.averageSpeed}")
-            Log.d("DisplayCourseHistory", "Vitesse moyenne: ${courseData.averageSpeed}")
+            Text(text = "Vitesse moyenne: ${courseData.averageSpeed} m/s")
+            Log.d("DisplayCourseHistory", "Vitesse moyenne: ${courseData.averageSpeed} m/s")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-            Text(text = "Allure par km: ${courseData.pacePerKm}")
-            Log.d("DisplayCourseHistory", "Allure par km: ${courseData.pacePerKm}")
+            Text(text = "Allure par km: ${courseData.pacePerKm} min/km")
+            Log.d("DisplayCourseHistory", "Allure par km: ${courseData.pacePerKm} min/km")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
             Text(text = "Position: ${courseData.position}")
             Log.d("DisplayCourseHistory", "Position: ${courseData.position}")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
         }
+        storeCourseData(course, elapsedTime)
     }
 
     @Composable

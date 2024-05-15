@@ -1,5 +1,6 @@
 package com.example.masterprojet1
 
+//import com.google.firebase.appcheck.internal.util.Logger.TAG
 import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
@@ -32,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-//import com.google.firebase.appcheck.internal.util.Logger.TAG
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
@@ -49,7 +49,7 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()
-        auth.signOut()
+//        auth.signOut()
         database =
             FirebaseDatabase.getInstance("https://master-42ff9-default-rtdb.europe-west1.firebasedatabase.app/")
 
@@ -136,9 +136,14 @@ class LoginActivity : ComponentActivity() {
     }
 
         fun StartActivity() {
-        val intent = Intent(this, ScanActivity::class.java)
-        startActivity(intent)
+//        val intent = Intent(this, ScanActivity::class.java)
+//        startActivity(intent)
+
+            val intent = Intent(this, ActivityMenu::class.java)
+startActivity(intent)
+finish()
     }
+
 
 
     @Composable
@@ -162,8 +167,8 @@ fun LoginComponent(login: (String, String) -> Unit) {
 fun RegisterComponent(
     register: (String, String, String, String) -> Unit, authState: MutableState<AuthState>
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("georgia@gmail.com") }
+    var password by remember { mutableStateOf("georgia1234") }
     var username by remember { mutableStateOf("") }
     var photoUrl by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -227,8 +232,8 @@ fun RegisterComponent(
 fun LoginComponent(
     logIn: (String, String) -> Unit, authState: MutableState<AuthState>
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("georgia@gmail.com") }
+    var password by remember { mutableStateOf("georgia1234") }
 
     Column(
         modifier = Modifier.fillMaxSize(),

@@ -1,5 +1,6 @@
 package com.example.masterprojet1
 
+
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,8 +8,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -23,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
+import com.google.firebase.auth.FirebaseAuth
 
 class ActivityMenu : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,10 +35,13 @@ class ActivityMenu : ComponentActivity() {
         setContent {
             MasterProjet1Theme {
                 // A surface container using the 'background' color from the theme
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+
+
                     var context = LocalContext.current
                     ModalNavigationDrawer(
                         drawerContent = {
@@ -47,9 +55,15 @@ class ActivityMenu : ComponentActivity() {
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(
-                                    label = { Text(text = "Historique") },
+                                    label = { Text(text = "Demarer une course") },
                                     selected = false,
                                     onClick = { val intent = Intent(context, DeviceActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Historique") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, Historique::class.java)
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(
@@ -86,19 +100,44 @@ class ActivityMenu : ComponentActivity() {
                         }
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.soundpacerunnerslogo),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(width = 80.dp, height = 80.dp), // Redimensionner l'image ici
-                                contentScale = ContentScale.FillBounds
-                            )
-                        }
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp),
+    contentAlignment = Alignment.Center
+) {
+    Image(
+        painter = painterResource(id = R.drawable.soundpacerunnerslogo),
+        contentDescription = null,
+        modifier = Modifier
+            .size(width = 120.dp, height = 120.dp) // Augmenter la taille de l'image
+            .align(Alignment.TopCenter), // Aligner l'image en haut
+        contentScale = ContentScale.FillBounds
+    )
+    Button(
+        onClick = { FirebaseAuth.getInstance().signOut() },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp), // Ajouter un padding en haut
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(
+            text = "Sign Out",
+
+        )
+    }
+    Button(
+        onClick = { startActivity(Intent(context, ScanActivity::class.java)) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp), // Ajouter un padding en haut
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(
+            text = "se connecter au bracelet",
+
+        )
+    }
+}
                     }
                 }
             }

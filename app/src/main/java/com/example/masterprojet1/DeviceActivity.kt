@@ -104,14 +104,16 @@ newCourseIntent.putExtra("courseId", courseId) // Replace "your_course_id" with 
             )
 
 
-            course = Course(
-                id = 0, // You need to provide an id here
-                date = Date(), // You need to provide a date here
-                position = "0.0,0.0", // You need to provide a position here
-                maxSpeed = 0f,
-                realTimeSpeed = realTimeSpeed,
-                speedValues = speedValues
-            )
+            val floatSpeedValues = mutableStateOf(speedValues.value.map { it.toFloat() })
+
+course = Course(
+    id = 0,
+    date = Date(),
+    position = "0.0,0.0",
+    maxSpeed = 0f,
+    realTimeSpeed = realTimeSpeed,
+    speedValues = floatSpeedValues
+)
 
             courseId?.let {
                 DeviceDetail(this, it, mutableStateOf(deviceInteraction), course){
@@ -186,10 +188,10 @@ newCourseIntent.putExtra("courseId", courseId) // Replace "your_course_id" with 
                 Log.d("CharacteristicValue", "UUID: ${characteristic.uuid}, Value: $intValue")
 
                 if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
-                    val newSpeed = intValue.toFloat()
+                    val newSpeed = convertLittleEndianToFloat(characteristic.value)
+
                     course.realTimeSpeed.value = newSpeed // Update the value
-                    course.speedValues.value =
-                        course.speedValues.value + newSpeed.toInt() // Add the new speed to speedValues
+                    course.speedValues.value = course.speedValues.value + newSpeed // Add the new speed to speedValues
 
                     Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
 
@@ -267,6 +269,15 @@ newCourseIntent.putExtra("courseId", courseId) // Replace "your_course_id" with 
 //        super.onStop()
 //        closeBluetoothGatt()
 //    }
+
+
+    fun convertLittleEndianToFloat(bytes: ByteArray): Float {
+    val intBits = bytes[0].toInt() and 0xFF or
+            ((bytes[1].toInt() and 0xFF) shl 8) or
+            ((bytes[2].toInt() and 0xFF) shl 16) or
+            ((bytes[3].toInt() and 0xFF) shl 24)
+    return Float.fromBits(intBits)
+}
 
     fun closeBluetoothGatt() {
         deviceInteraction.IsConnected = false

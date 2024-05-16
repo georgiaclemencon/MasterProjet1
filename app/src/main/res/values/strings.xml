@@ -19,4 +19,5 @@
     <string name="Send_Email">sendemail</string>
     <string name="title_activity_historique">Historique</string>
     <string name="title_activity_new_course">NewCourse</string>
+    <string name="title_activity_device_leds">DeviceActivity_LEDs</string>
 </resources>

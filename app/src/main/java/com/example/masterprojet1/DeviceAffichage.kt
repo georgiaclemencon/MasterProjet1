@@ -2,6 +2,8 @@ package com.example.masterprojet1
 
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -49,30 +51,41 @@ fun DeviceDetail(
     course: Course,
     onConnectClick: () -> Unit
 ) {
-    // Define isRunning and time here
     var time by remember { mutableStateOf(0) }
     var isRunning by remember { mutableStateOf(false) }
+    var isclicked by remember { mutableStateOf(false) }
+    var countdownTimer by remember { mutableStateOf(3) }
 
+    //var gatt: BluetoothGatt? = null
+
+    lateinit var deviceAddress: String
+
+    //val deviceActivity = DeviceActivity()
 
     Column(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally // Centrer horizontalement tous les éléments
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
         Row(
-            modifier = Modifier.fillMaxWidth(), // Prendre toute la largeur disponible
-            horizontalArrangement = Arrangement.Center // Centrer horizontalement les éléments dans la rangée
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
             Button(
                 onClick = {
                     onConnectClick()
-                    // Set isRunning to true when the button is clicked
                     isRunning = true
+                    isclicked = true
+                    time = 0 // Réinitialiser le chronomètre à zéro lorsque le bouton est cliqué
+                    Log.e("ici button timer","on est la")
+                    // Appel à la fonction pour écrire la caractéristique du buzzer
+
+                    //deviceActivity.connectToDevice()
+                    deviceActivity.writetocharac(1, 0)   //Troisieme charac du buzzer pour l'activer trois fois pendant le timer
                 },
-                modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
+                modifier = Modifier.padding(8.dp)
             ) {
                 Text("Demarrer une course")
             }
@@ -81,32 +94,49 @@ fun DeviceDetail(
                     val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
                     deviceActivity.startActivity(intent)
                 },
-                modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
+                modifier = Modifier.padding(8.dp)
             ) {
                 Icon(Icons.Filled.Settings, contentDescription = "Settings")
             }
         }
 
-        LaunchedEffect(isRunning) {
-            while (isRunning) {
-                delay(1000L) // delay for 1 second
-                time++
+        if(isclicked){
+            LaunchedEffect(isRunning) {
+                while (isRunning && countdownTimer > 0) {
+                    delay(1000L)
+                    countdownTimer--
+                }
+                isRunning = true
             }
         }
+
+        if (isclicked && countdownTimer <= 0) {
+            LaunchedEffect(isRunning) {
+                while (isRunning) {
+                    delay(1000L)
+                    time++
+                }
+            }
+        }
+
         val elapsedTimeInHours = time / 3600
         val elapsedTimeInMinutes = (time % 3600) / 60
         val elapsedTimeInSeconds = time % 60
         val elapsedTimeInMilliseconds = (time * 1000) % 1000
         Text(
-            "Chronos: ${
-                String.format(
-                    "%02d:%02d:%02d:%03d",
-                    elapsedTimeInHours,
-                    elapsedTimeInMinutes,
-                    elapsedTimeInSeconds,
-                    elapsedTimeInMilliseconds
-                )
-            }",
+            text = if (countdownTimer > 0) {
+                "$countdownTimer"
+            } else {
+                "Chronos: ${
+                    String.format(
+                        "%02d:%02d:%02d:%03d",
+                        elapsedTimeInHours,
+                        elapsedTimeInMinutes,
+                        elapsedTimeInSeconds,
+                        elapsedTimeInMilliseconds
+                    )
+                }"
+            },
             style = TextStyle(
                 fontSize = 35.sp,
                 fontWeight = FontWeight.Bold,

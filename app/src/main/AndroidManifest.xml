@@ -17,8 +17,6 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
-
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -29,6 +27,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MasterProjet1"
         tools:targetApi="31">
+        <activity
+            android:name=".DeviceActivity_LEDs"
+            android:exported="false"
+            android:label="@string/title_activity_device_leds"
+            android:theme="@style/Theme.MasterProjet1" />
         <activity
             android:name=".NewCourse"
             android:exported="false"
@@ -110,10 +113,8 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MasterProjet1" />
+
         <service android:name=".DeviceConnectionService" />
-
-
     </application>
-
 
 </manifest>

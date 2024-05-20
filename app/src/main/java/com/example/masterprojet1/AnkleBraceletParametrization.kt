@@ -19,6 +19,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,10 @@ import com.example.masterprojet1.ui.theme.MasterProjet1Theme
 import java.util.UUID
 
 class AnkleBraceletParametrization : ComponentActivity() {
+
+    private lateinit var deviceInteraction: DeviceComposableInteraction
+
+    private var bluetoothGatt: BluetoothGatt? = null
 
     private fun BluetoothGattCharacteristic.isIndicatable(): Boolean =
         containsProperty(BluetoothGattCharacteristic.PROPERTY_INDICATE)
@@ -92,8 +97,8 @@ class AnkleBraceletParametrization : ComponentActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
-        val intent = Intent(this, DeviceConnectionService::class.java)
         startService(intent)
         super.onCreate(savedInstanceState)
 
@@ -104,6 +109,24 @@ class AnkleBraceletParametrization : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val isStateConnected = remember { mutableStateOf(false) }
+
+                    val device = intent.getParcelableExtra<BluetoothDevice>("device")
+                    if (device != null) {
+                        Log.e("devicejusteapresintent", "$device")
+                    } else {
+                        Log.e("DeviceActivity", "BluetoothDevice est null")
+                    }
+
+                    deviceInteraction = DeviceComposableInteraction(
+                        IsConnected = isStateConnected.value,
+                        deviceTitle = device?.name ?: "Device Unknown",
+//                realTimeSpeed = mutableStateOf(0f) // Initialize realTimeSpeed with 0f
+                    )
+
+                    // Dans l'activité AnkleBraceletParametrization
+
+
                     var showAdditionalFields by remember { mutableStateOf(false) }
                     var showAdditionalFieldstwo by remember { mutableStateOf(false) }
 
@@ -117,6 +140,10 @@ class AnkleBraceletParametrization : ComponentActivity() {
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Log.e("device","$device")
+                        if (device != null) {
+                            connectToDevice(device)
+                        }
                         Text(
                             text = "Ankle Bracelet Parametrization",
                             //style = MaterialTheme.typography.h6,
@@ -161,29 +188,15 @@ class AnkleBraceletParametrization : ComponentActivity() {
                 }
             }
         }
-
-    }
-
-    fun writetocharac(value: Int, nb: Int) {
-        // Convertir l'entier en tableau de bytes
-        Log.e("dans fonction writetocharac","writetochara")
-        val valueToWrite = byteArrayOf(value.toByte())
-        // Écrire la valeur dans la caractéristique BLE
-        writeValueToCharacteristic(valueToWrite, nb)
-    }
-
-    object AnkleBraceletUtils {
-        @SuppressLint("MissingPermission")
-        fun writeToCharac(context: Context, value: Int, nb: Int) {
-            val ankleBraceletActivity = context as AnkleBraceletParametrization
-            ankleBraceletActivity.writetocharac(value, nb)
-        }
+        val intent = Intent(this, BluetoothService::class.java)
     }
 
     @SuppressLint("MissingPermission")
-    private fun connectToDevice(device: BluetoothDevice) {
+    fun connectToDevice(device: BluetoothDevice) {
+        Log.e("deviceconnectotdevice","$device")
         Log.e("connect", "connectbis")
         gatt = device.connectGatt(this, false, gattCallback)
+        Log.d("GattConnection", "Gatt: $gatt")
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
@@ -194,9 +207,11 @@ class AnkleBraceletParametrization : ComponentActivity() {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.e("callbackgatt","Callback gatt connected")
                 isConnecting = false // La connexion est établie
+                this@AnkleBraceletParametrization.gatt = gatt // Set the gatt here
                 gatt?.discoverServices() // Découvrir les services après la connexion
             }
         }
+
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
@@ -205,30 +220,25 @@ class AnkleBraceletParametrization : ComponentActivity() {
                 services = gatt?.services
                 if (services != null && services!!.isNotEmpty()) {
                     Log.e("ServiceListSize", "Nombre de services découverts : ${services!!.size}")
-                    if(services!!.size >= 3){
-                        val thirdService = services!![2] // Troisième service (index 2)
-                        val characteristics = thirdService.characteristics
+                    if(services!!.size >= 2){
+                        val SecondService = services!![2] // Troisième service (index 2)
+                        Log.e("2eme srevicee","$SecondService")
+                        val characteristics = SecondService.characteristics
                         if (characteristics.isNotEmpty()) {
-                            firstcharacteristic = characteristics[0] // Première caractéristique du troisième service
-                            secondcharacteristic = characteristics[1] // Première caractéristique du troisième service
+                            val firstCharacteristic = characteristics[0] // Première caractéristique du troisième service
+                            Log.e("2eme srevicee 1ere charac","$firstCharacteristic")
                             Log.e("charac","Acces à la première caractéristique du troisième service")
                             // Vous pouvez maintenant interagir avec la première caractéristique
 
                             // Activer les notifications pour cette caractéristique
-                            gatt?.setCharacteristicNotification(firstcharacteristic, true)
-                            gatt?.setCharacteristicNotification(secondcharacteristic, true)
-
-                            val FirstCharacteristic = firstcharacteristic
-                            val SecondCharacteristic = secondcharacteristic
+                            gatt?.setCharacteristicNotification(firstCharacteristic, true)
 
                             // Rechercher le descripteur de notification pour activer les notifications
-                            val descriptor_first = FirstCharacteristic?.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
-                            val descriptor_second = SecondCharacteristic?.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+                            val descriptor = firstCharacteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
                             // Activer les notifications pour ce descripteur
-                            descriptor_first?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                            gatt?.writeDescriptor(descriptor_first)
-                            descriptor_second?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                            gatt?.writeDescriptor(descriptor_second)
+                            descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                            gatt?.writeDescriptor(descriptor)
+
 
                         } else {
                             // Aucune caractéristique dans le troisième service
@@ -273,39 +283,59 @@ class AnkleBraceletParametrization : ComponentActivity() {
         }
     }
 
+    fun writetocharac(value: Int, nb: Int) {
+        // Convertir l'entier en tableau de bytes
+        Log.e("dans fonction writetocharac", "writetochara")
+        Log.e("dans fonction writetocharac", "gatt : $gatt")
+        Log.e("valuetobyte", "${value}")
+        val byteArray = intToByteArray(value)
+        Log.e("avant writee", "avantwritechar")
+        // Écrire la valeur dans la caractéristique BLE
+
+        writeValueToCharacteristic(byteArray, nb)
+    }
+
+    fun intToByteArray(value: Int): ByteArray {
+        return byteArrayOf(value.toByte())
+    }
+
     @SuppressLint("MissingPermission")
-    private fun writeValueToCharacteristic(value: ByteArray, nb: Int) {
+    fun writeValueToCharacteristic(value: ByteArray, nb: Int) {
         // Vérifiez si la connexion Bluetooth est établie et que gatt n'est pas null
         if (gatt != null) {
-            // Récupérez le troisième service
-            Log.e("write1", "write1")
-            service = gatt?.services?.get(1)
-            // Troisième service (index 2)
-            Log.e("write2", "write2")
+            // Vérifiez si la liste des services est disponible
+            if (services != null) {
+                // Vous pouvez accéder aux services ici
+                Log.e("serviceespasnull","seervices")
+                service = gatt?.services?.get(2)
+                Log.e("deuxiemeservice","$service")
+                Log.e("uuid service","${service?.uuid}")
+                // Troisième service (index 2)
+                Log.e("write2","write2")
 
-            // Vérifiez si le service et ses caractéristiques sont valides
-            if (service != null && service!!.characteristics.isNotEmpty()) {
-                Log.e("write3", "write3")
-                // Récupérez la première caractéristique du troisième service
-                val characteristic =
-                    service!!.characteristics[nb] // Première caractéristique du troisième service
-                //characteristicrec = service!!.characteristics[1]
-                // Vérifiez si la caractéristique est valide
-                if (characteristic != null) {
-                    // Écrivez la valeur dans la caractéristique
-                    Log.e("write4", "write4")
-                    characteristic.value = value
-                    //Log.d("CharacteristicValue", "Valeur de la value : $value")
-                    //Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value?.contentToString()}")
-                    gatt?.writeCharacteristic(characteristic)
+                // Vérifiez si le service et ses caractéristiques sont valides
+                if (service != null && service!!.characteristics.isNotEmpty()) {
+                    Log.e("write3","write3")
+                    // Récupérez la première caractéristique du deuxieme service
+                    val characteristic = service!!.characteristics[nb] // Première caractéristique du deuxieme service
+                    Log.e("charac uuid","${characteristic.uuid}")
+                    // Vérifiez si la caractéristique est valide
+                    if (characteristic != null) {
+                        // Écrivez la valeur dans la caractéristique
+                        Log.e("write4","write4")
+
+                        characteristic.value = value
+                        Log.d("CharacteristicValue", "Valeur de la value : $value")
+                        Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value.contentToString()}")
+                        gatt?.writeCharacteristic(characteristic)
+                    } else {
+                        Log.e("writeValueToCharacteristic", "Caractéristique non valide")
+                    }
                 } else {
-                    Log.e("writeValueToCharacteristic", "Caractéristique non valide")
+                    Log.e("writeValueToCharacteristic", "Aucune caractéristique dans le troisième service")
                 }
             } else {
-                Log.e(
-                    "writeValueToCharacteristic",
-                    "Aucune caractéristique dans le troisième service"
-                )
+                Log.e("writeValueToCharacteristic", "Liste des services non disponible")
             }
         } else {
             Log.e("writeValueToCharacteristic", "Connexion Bluetooth non établie")
@@ -317,6 +347,14 @@ class AnkleBraceletParametrization : ComponentActivity() {
         super.onDestroy()
         gatt?.disconnect()
         gatt?.close()
+        unbindService(serviceConnection)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun closeBluetoothGatt() {
+        deviceInteraction.IsConnected = false
+        bluetoothGatt?.close()
+        bluetoothGatt = null
     }
 
     @SuppressLint("MissingPermission")
@@ -330,7 +368,6 @@ class AnkleBraceletParametrization : ComponentActivity() {
             }
         } ?: error("Not connected to a BLE device!")
     }
-
     @SuppressLint("MissingPermission")
     @TargetApi(Build.VERSION_CODES.S)
     @Suppress("DEPRECATION")
@@ -343,61 +380,18 @@ class AnkleBraceletParametrization : ComponentActivity() {
     }
 
     @SuppressLint("MissingPermission")
-    fun enableNotifications(characteristic: BluetoothGattCharacteristic) {
-        Log.e("enable", "enablenotif")
-        val cccdUuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-        val payload = when {
-            characteristic.isIndicatable() -> BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
-            characteristic.isNotifiable() -> BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            else -> {
-                Log.e(
-                    "ConnectionManager",
-                    "${characteristic.uuid} doesn't support notifications/indications"
-                )
-                return
+    private fun connectionStateChange(gatt: BluetoothGatt?, newState: Int) {
+        if (newState == BluetoothProfile.STATE_CONNECTED) {
+            gatt?.discoverServices()
+        }
+        runOnUiThread {
+            if (::deviceInteraction.isInitialized) {
+                deviceInteraction.IsConnected = newState == BluetoothProfile.STATE_CONNECTED
+                if (deviceInteraction.IsConnected) {
+                    Toast.makeText(this, "Connecté", Toast.LENGTH_SHORT).show()
+                }
             }
         }
-
-        characteristic.getDescriptor(cccdUuid)?.let { cccDescriptor ->
-            if (gatt?.setCharacteristicNotification(characteristic, true) == false) {
-                Log.e(
-                    "ConnectionManager",
-                    "setCharacteristicNotification failed for ${characteristic.uuid}"
-                )
-                return
-            }
-            Log.e("writedescr", "writedescriptor")
-            writeDescriptor(cccDescriptor, payload)
-        } ?: Log.e(
-            "ConnectionManager",
-            "${characteristic.uuid} doesn't contain the CCC descriptor!"
-        )
-    }
-
-    @SuppressLint("MissingPermission")
-    fun disableNotifications(characteristic: BluetoothGattCharacteristic) {
-        if (!characteristic.isNotifiable() && !characteristic.isIndicatable()) {
-            Log.e(
-                "ConnectionManager",
-                "${characteristic.uuid} doesn't support indications/notifications"
-            )
-            return
-        }
-
-        val cccdUuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-        characteristic.getDescriptor(cccdUuid)?.let { cccDescriptor ->
-            if (gatt?.setCharacteristicNotification(characteristic, false) == false) {
-                Log.e(
-                    "ConnectionManager",
-                    "setCharacteristicNotification failed for ${characteristic.uuid}"
-                )
-                return
-            }
-            writeDescriptor(cccDescriptor, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)
-        } ?: Log.e(
-            "ConnectionManager",
-            "${characteristic.uuid} doesn't contain the CCC descriptor!"
-        )
     }
 
 //    fun writeData() {

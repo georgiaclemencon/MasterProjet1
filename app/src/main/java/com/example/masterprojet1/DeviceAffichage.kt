@@ -43,17 +43,20 @@ import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.coroutines.delay
 import java.util.Date
 
+@SuppressLint("MissingPermission")
 @Composable
 fun DeviceDetail(
     deviceActivity: DeviceActivity,
     courseId: String,
     deviceInteraction: MutableState<DeviceComposableInteraction>,
     course: Course,
+    device: BluetoothDevice?,
     onConnectClick: () -> Unit
 ) {
     var time by remember { mutableStateOf(0) }
     var isRunning by remember { mutableStateOf(false) }
     var isclicked by remember { mutableStateOf(false) }
+    var istimer by remember { mutableStateOf(false) }
     var countdownTimer by remember { mutableStateOf(3) }
 
     //var gatt: BluetoothGatt? = null
@@ -76,14 +79,14 @@ fun DeviceDetail(
             Button(
                 onClick = {
                     onConnectClick()
-                    isRunning = true
-                    isclicked = true
-                    time = 0 // Réinitialiser le chronomètre à zéro lorsque le bouton est cliqué
-                    Log.e("ici button timer","on est la")
-                    // Appel à la fonction pour écrire la caractéristique du buzzer
-
-                    //deviceActivity.connectToDevice()
-                    deviceActivity.writetocharac(1, 0)   //Troisieme charac du buzzer pour l'activer trois fois pendant le timer
+                    isclicked = !isclicked
+                    if (isclicked) {
+                        //deviceActivity.writetocharac(0x01,0)
+                        isRunning = true
+                        //istimer=false
+                        countdownTimer = 3 // Reset countdown timer
+                        time = 0 // Reset the stopwatch
+                    }
                 },
                 modifier = Modifier.padding(8.dp)
             ) {
@@ -92,6 +95,8 @@ fun DeviceDetail(
             IconButton(
                 onClick = {
                     val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
+                    Log.e("device","$device")
+                    intent.putExtra("device", device)
                     deviceActivity.startActivity(intent)
                 },
                 modifier = Modifier.padding(8.dp)
@@ -103,6 +108,11 @@ fun DeviceDetail(
         if(isclicked){
             LaunchedEffect(isRunning) {
                 while (isRunning && countdownTimer > 0) {
+                    Log.e("countdowntimer","$countdownTimer")
+                    //if(!istimer){
+                    deviceActivity.writetocharac(0x01,0)
+                    //istimer=true
+                    //}
                     delay(1000L)
                     countdownTimer--
                 }

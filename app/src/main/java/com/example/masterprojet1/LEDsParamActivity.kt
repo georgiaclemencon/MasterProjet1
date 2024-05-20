@@ -1,7 +1,18 @@
 package com.example.masterprojet1
 
+import android.annotation.SuppressLint
+import android.annotation.TargetApi
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothProfile
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,14 +31,29 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
+import java.util.UUID
 
 class LEDsParamActivity : ComponentActivity() {
+
+    private var gatt: BluetoothGatt? = null
+    private var isConnecting by mutableStateOf(true) // État de la connexion
+
+    private var characteristicValue: ByteArray? = byteArrayOf()
+    private var firstcharacteristic: BluetoothGattCharacteristic? = null
+    private var secondcharacteristic: BluetoothGattCharacteristic? = null
+
+    private var services: List<BluetoothGattService>? = null
+    private var service: BluetoothGattService? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

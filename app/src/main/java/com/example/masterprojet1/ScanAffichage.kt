@@ -201,11 +201,10 @@ fun DisplayDevices(isScanning: MutableState<Boolean>, results: MutableList<ScanR
                         intent.putExtra("device_name", result.device.name)
                         intent.putExtra("device_rssi", result.rssi)
 
-                        val intentbis = Intent(context, AnkleBraceletParametrization::class.java).apply {
-                            putExtra("device_address", result.device.address)
-                        }
-                        context.startActivity(intentbis)
                         // Start DeviceActivity
+                        //val intentbis = Intent(context, AnkleBraceletParametrization::class.java)
+                        // Put the device address as an extra in the Intent
+                        //intentbis.putExtra("device", result.device)
 
                         context.startActivity(intent)
                     }

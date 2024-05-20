@@ -12,24 +12,44 @@ import android.os.IBinder
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateValue
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
@@ -391,6 +411,7 @@ class NewCourse : ComponentActivity() {
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
         }
         storeCourseData(course, elapsedTime)
+        PulsatingCircles("Compose")
     }
 
     @Composable
@@ -424,6 +445,100 @@ class NewCourse : ComponentActivity() {
                 modelProducer
             )
         }
+    }
+
+
+    @Composable
+    fun SimpleCircleShape2(
+        size: Dp,
+        color: Color = Color.White,
+        borderWidth: Dp = 0.dp,
+        borderColor: Color = Color.LightGray.copy(alpha = 0.0f)
+    ) {
+        Column(
+            modifier = Modifier
+                .wrapContentSize(Alignment.Center)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(
+                        color
+                    )
+                    .border(borderWidth, borderColor)
+            )
+        }
+    }
+
+val MyColorScheme = darkColorScheme(
+    primary = Color.Black, // predefined color
+    secondary = Color.Red, // predefined color
+    tertiary = Color.DarkGray, // custom color
+    onPrimary = Color.White // predefined color
+)
+@Composable
+fun MyTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = MyColorScheme) {
+        content()
+    }
+}
+
+@Composable
+fun PulsatingCircles(text: String) {
+    MyTheme {
+        Column {
+            val infiniteTransition = rememberInfiniteTransition()
+            val size by infiniteTransition.animateValue(
+                initialValue = 200.dp,
+                targetValue = 190.dp,
+                Dp.VectorConverter,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(500, easing = FastOutLinearInEasing),
+                    repeatMode = RepeatMode.Reverse
+                )
+            )
+            val smallCircle by infiniteTransition.animateValue(
+                initialValue = 150.dp,
+                targetValue = 160.dp,
+                Dp.VectorConverter,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000, easing = FastOutLinearInEasing),
+                    repeatMode = RepeatMode.Reverse
+                )
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                SimpleCircleShape2(
+                    size = size,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                SimpleCircleShape2(
+                    size = smallCircle,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                SimpleCircleShape2(
+                    size = 130.dp,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+                Column {
+                    Text(
+                        text = text,
+                        style = TextStyle(color = MaterialTheme.colorScheme.onPrimary)
+                    )
+                }
+            }
+        }
+    }
+}
+    @Preview
+    @Composable
+    fun PreviewPulsatingCircles() {
+        PulsatingCircles("Compose")
     }
 
     @Composable

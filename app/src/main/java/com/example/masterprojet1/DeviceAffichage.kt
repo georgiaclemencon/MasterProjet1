@@ -71,7 +71,7 @@ fun DeviceDetail(
                     onConnectClick()
                     // Set isRunning to true when the button is clicked
                     isRunning = true
-                },
+                          },
                 modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
             ) {
                 Text("Demarrer une course")
@@ -233,14 +233,21 @@ fun DisplayAverageSpeed(
 @Composable
 fun DisplayRealTimeSpeed(course: Course) {
     val speed = course.realTimeSpeed.value
-    LaunchedEffect(speed) {
-        // This block will be recomposed whenever speed changes
-    }
-   Text(
-    text = "Vitesse en temps réel : ${speed.toFloat()} m/s",
-    style = MaterialTheme.typography.bodyLarge
-)
+    val pulse = course.pulse.value // Supposons que vous ayez une variable pulse dans votre classe Course
 
+    LaunchedEffect(speed, pulse) {
+        // Ce bloc sera recomposé chaque fois que la vitesse ou la pulsation change
+    }
+
+    Text(
+        text = "Vitesse en temps réel : ${speed.toFloat()} m/s",
+        style = MaterialTheme.typography.bodyLarge
+    )
+
+    Text(
+        text = "Pulsation cardiaque : $pulse bpm",
+        style = MaterialTheme.typography.bodyLarge
+    )
 }
 
 
@@ -274,7 +281,8 @@ data class Course(
     var position: String, // Vous devez obtenir la position actuelle et la convertir en String
     var maxSpeed: Float,
     val realTimeSpeed: MutableState<Float> = mutableStateOf(0f),
-    val speedValues: MutableState<List<Float>> = mutableStateOf(listOf())
+    val speedValues: MutableState<List<Float>> = mutableStateOf(listOf()),
+    val pulse: MutableState<Float> = mutableStateOf(0f),
 )
 
 class DeviceComposableInteraction(

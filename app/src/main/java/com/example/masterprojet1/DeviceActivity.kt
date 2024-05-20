@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import java.util.Date
+import java.util.LinkedList
+import java.util.Queue
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
@@ -39,12 +41,12 @@ class DeviceActivity : ComponentActivity() {
 
     var isRunning = true
     private lateinit var newCourseIntent: Intent
-
+    val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
 
     //private var currentLEDStateEnum = LEDStateEnum.NONE
 
     private var realSpeedBluetoothGattCharacteristic: BluetoothGattCharacteristic? = null
-
+    private var pulseBluetoothGattCharacteristic: BluetoothGattCharacteristic? = null
 
     private var deviceConnectionService: DeviceConnectionService? = null
 
@@ -59,22 +61,38 @@ class DeviceActivity : ComponentActivity() {
             deviceConnectionService = null
         }
     }
+    val characteristicsQueue: Queue<BluetoothGattCharacteristic> = LinkedList()
+    fun BluetoothGattCharacteristic.isReadable(): Boolean =
+        containsProperty(BluetoothGattCharacteristic.PROPERTY_READ)
 
-    override fun onStart() {
-    super.onStart()
-    Intent(this, DeviceConnectionService::class.java).also { intent ->
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+    fun BluetoothGattCharacteristic.isWritable(): Boolean =
+        containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE)
+
+    fun BluetoothGattCharacteristic.isWritableWithoutResponse(): Boolean =
+        containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)
+
+    fun BluetoothGattCharacteristic.containsProperty(property: Int): Boolean {
+        return properties and property != 0
     }
 
-    // Generate a unique identifier for the course
-    val database = Firebase.database
+    override fun onStart() {
+        super.onStart()
+        Intent(this, DeviceConnectionService::class.java).also { intent ->
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
+
+        // Generate a unique identifier for the course
+        val database = Firebase.database
 
 // In your method
-courseId = generateUUID()
-newCourseIntent = Intent(this, NewCourse::class.java)
-newCourseIntent.putExtra("courseId", courseId) // Replace "your_course_id" with the actual course id
-    Log.e("DeviceActivity", "Putting courseId in intent: $courseId")
-}
+        courseId = generateUUID()
+        newCourseIntent = Intent(this, NewCourse::class.java)
+        newCourseIntent.putExtra(
+            "courseId",
+            courseId
+        ) // Replace "your_course_id" with the actual course id
+        Log.e("DeviceActivity", "Putting courseId in intent: $courseId")
+    }
 
     fun isDeviceConnected(): Boolean {
         return deviceConnectionService?.isDeviceConnected() ?: false
@@ -105,18 +123,21 @@ newCourseIntent.putExtra("courseId", courseId) // Replace "your_course_id" with 
 
 
             val floatSpeedValues = mutableStateOf(speedValues.value.map { it.toFloat() })
+            val pulseValue = mutableStateOf(0f)
 
-course = Course(
-    id = 0,
-    date = Date(),
-    position = "0.0,0.0",
-    maxSpeed = 0f,
-    realTimeSpeed = realTimeSpeed,
-    speedValues = floatSpeedValues
-)
+
+            course = Course(
+                id = 0,
+                date = Date(),
+                position = "0.0,0.0",
+                maxSpeed = 0f,
+                realTimeSpeed = realTimeSpeed,
+                speedValues = floatSpeedValues,
+                pulse = pulseValue,
+            )
 
             courseId?.let {
-                DeviceDetail(this, it, mutableStateOf(deviceInteraction), course){
+                DeviceDetail(this, it, mutableStateOf(deviceInteraction), course) {
                     connectToDevice(device)
                 }
             }
@@ -131,7 +152,50 @@ course = Course(
         unbindService(serviceConnection)
     }
 
+
+//    fun BluetoothGattCharacteristic.isIndicatable(): Boolean {
+//        return properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
+//    }
+//
+//    fun BluetoothGattCharacteristic.isNotifiable(): Boolean {
+//        return properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
+//    }
+
+
+//    fun enableNotifications(characteristic: BluetoothGattCharacteristic) {
+//
+//        val cccdUuid = UUID.fromString(CCC_DESCRIPTOR_UUID)
+//        val payload = when {
+//            characteristic.isIndicatable() -> BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+//            characteristic.isNotifiable() -> BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+//
+//            else -> {
+//                Log.e(
+//                    "enableNotifications",
+//                    "${characteristic.uuid} doesn't support notifications/indications"
+//                )
+//                return
+//            }
+//        }
+//
+//        characteristic.getDescriptor(cccdUuid)?.let { cccDescriptor ->
+//            if (bluetoothGatt?.setCharacteristicNotification(characteristic, true) == false) {
+//                Log.e(
+//                    "enableNotifications",
+//                    "setCharacteristicNotification failed for ${characteristic.uuid}"
+//                )
+//                return
+//            }
+//        } ?: Log.e(
+//            "enableNotifications",
+//            "${characteristic.uuid} doesn't contain the CCC descriptor!"
+//        )
+//    }
+
+
+    @OptIn(ExperimentalStdlibApi::class)
     private fun connectToDevice(device: BluetoothDevice?) {
+        val descriptorWriteQueue: Queue<BluetoothGattDescriptor> = LinkedList();
         bluetoothGatt = device?.connectGatt(this, true, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(
                 gatt: BluetoothGatt?,
@@ -142,56 +206,237 @@ course = Course(
                 connectionStateChange(gatt, newState)
             }
 
+            override fun onDescriptorWrite(
+                gatt: BluetoothGatt?,
+                descriptor: BluetoothGattDescriptor?,
+                status: Int
+            ) {
+                super.onDescriptorWrite(gatt, descriptor, status)
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    descriptorWriteQueue.remove()
+                    if (descriptorWriteQueue.size > 0) {
+                        gatt?.writeDescriptor(descriptorWriteQueue.element())
+                    }
+                } else {
+                    Log.e("DescriptorError", "Failed to write descriptor")
+                }
+            }
+
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                 super.onServicesDiscovered(gatt, status)
 
-                val serviceUUID = UUID.fromString("00000000-cc7a-482a-984a-7f2ed5b3e58f")
-                val characteristicUUID = UUID.fromString("0000abcd-8e22-4541-9d4c-21edae82ed19")
-                val cccDescriptorUUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    Log.e(
+                        "onServicesDiscovered",
+                        "Device service discovery failed, status: $status"
+                    )
+                    return
+                }
 
-                val service = gatt?.getService(serviceUUID)
-                val characteristic = service?.getCharacteristic(characteristicUUID)
+                val serviceUUID_acc = UUID.fromString("0000AAAA-cc7a-482a-984a-7f2ed5b3e58f")
+                val characteristicUUID_acc = UUID.fromString("0000abcd-8e22-4541-9d4c-21edae82ed19")
+                val cccDescriptorUUID_acc = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
+
+
+                var service = gatt?.getService(serviceUUID_acc)
+                var characteristic = service?.getCharacteristic(characteristicUUID_acc)
 
                 if (characteristic != null) {
-                    realSpeedBluetoothGattCharacteristic =
-                        characteristic // Assign the characteristic to realSpeedBluetoothGattCharacteristic
+                    realSpeedBluetoothGattCharacteristic = characteristic
+                    val notificationSet = gatt?.setCharacteristicNotification(characteristic, true)
+                    Log.d(
+                        "AccNotification",
+                        "Notification set: $notificationSet, je suis bien abonnée à la notification de acc"
+                    )
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@DeviceActivity,
+                            "Abonné à la caractéristique : ${characteristic!!.uuid}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    val descriptor = characteristic.getDescriptor(cccDescriptorUUID_acc)
+                    descriptor?.let {
+                        it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        descriptorWriteQueue.add(it)
+                        if (descriptorWriteQueue.size == 1) {
+                            var test = gatt?.writeDescriptor(descriptorWriteQueue.element())
+                            Log.d("test Acc", "test: $test")
+                        }
+                    } ?: Log.e("DescriptorError", "Descriptor is null")
+                }
 
-                    gatt.setCharacteristicNotification(characteristic, true)
+                val characteristicUUID_pulse =
+                    UUID.fromString("0000eeee-8e22-4541-9d4c-21edae82ed19")
 
-                    val descriptor = characteristic.getDescriptor(cccDescriptorUUID)
-                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                    gatt.writeDescriptor(descriptor)
+                service = gatt?.getService(serviceUUID_acc)
+                characteristic = service?.getCharacteristic(characteristicUUID_pulse)
+
+                if (characteristic != null) {
+                    pulseBluetoothGattCharacteristic = characteristic
+                    val notificationSet = gatt?.setCharacteristicNotification(characteristic, true)
+                    Log.d(
+                        "PulseNotification",
+                        "Notification set: $notificationSet, je suis bien abonnée à la notification de pulse"
+                    )
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@DeviceActivity,
+                            "Abonné à la caractéristique : ${characteristic.uuid}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    val descriptor = characteristic.getDescriptor(cccDescriptorUUID_acc)
+                    descriptor?.let {
+                        it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        descriptorWriteQueue.add(it)
+                        if (descriptorWriteQueue.size == 1) {
+                            var test = gatt?.writeDescriptor(descriptorWriteQueue.element())
+                            Log.d("test Pulse", "test: $test")
+                        }
+                    } ?: Log.e("DescriptorError", "Descriptor is null")
                 }
             }
 
+
+//      private fun readpulse() {
+//    Log.d("readpulse", "Starting to read pulse...")
+//    bluetoothGatt?.discoverServices()
+//    val pulseServiceUuid = UUID.fromString("0000aaaa-0000-1000-8000-00805f9b34fb")
+//    val pulseLevelCharUuid = UUID.fromString("0000eeee-0000-1000-8000-00805f9b34fb")
+//    val pulseService = bluetoothGatt?.getService(pulseServiceUuid)
+//    Log.d("readpulse", "Pulse service: $pulseService")
+//    val pulseLevelChar = pulseService?.getCharacteristic(pulseLevelCharUuid)
+//    Log.d("readpulse", "Pulse level characteristic: $pulseLevelChar")
+//    if (pulseLevelChar?.isReadable() == true) {
+//        Log.d("readpulse", "Pulse level characteristic is readable, reading characteristic...")
+//        bluetoothGatt?.readCharacteristic(pulseLevelChar)
+//    } else {
+//        Log.d("readpulse", "Pulse level characteristic is not readable")
+//    }
+//}
+
             override fun onCharacteristicRead(
-                gatt: BluetoothGatt?,
-                characteristic: BluetoothGattCharacteristic?,
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                value: ByteArray,
                 status: Int
             ) {
-                super.onCharacteristicRead(gatt, characteristic, status)
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    characteristic?.let {
-                        val intValue = it.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
-                        Log.d("CharacteristicValue", "UUID: ${it.uuid}, Value: $intValue")
+                val uuid = characteristic.uuid
+                when (status) {
+                    BluetoothGatt.GATT_SUCCESS -> {
+                        Log.i(
+                            "BluetoothGattCallback",
+                            "Read characteristic $uuid:\n${value.toHexString()}"
+                        )
+                    }
+
+                    BluetoothGatt.GATT_READ_NOT_PERMITTED -> {
+                        Log.e("BluetoothGattCallback", "Read not permitted for $uuid!")
+                    }
+
+                    else -> {
+                        Log.e(
+                            "BluetoothGattCallback",
+                            "Characteristic read failed for $uuid, error: $status"
+                        )
                     }
                 }
             }
+
 
             override fun onCharacteristicChanged(
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic
             ) {
                 super.onCharacteristicChanged(gatt, characteristic)
-                val intValue =
-                    characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
-                Log.d("CharacteristicValue", "UUID: ${characteristic.uuid}, Value: $intValue")
+                Log.d(
+                    "onCharacteristicChanged",
+                    "UUID: ${characteristic.uuid}, Value: ${characteristic.value}"
+                )
+
+                val bleServices = gatt.services // Retrieve the available services on the device
+                val service2 = bleServices?.get(2) // Get the third service (index starts from 0)
+
+
+                val pulseServiceUUID = service2?.uuid // Get the UUID of the service
+                Log.e("PulseServiceUUID", "Pulse Service UUID: $pulseServiceUUID")
+
+
+                val pulseCaract =
+                    service2?.characteristics?.get(1) // Get the second characteristic of the service
+                val pulseCaractUUID =
+                    pulseCaract?.uuid // Get the UUID of the characteristic
+                Log.e("PulseCharacteristicUUID", "Pulse Characteristic UUID: $pulseCaractUUID")
+
+
+//                val serviceUUID1 =
+//                    UUID.fromString("0000AAAA-cc7a-482a-984a-7f2ed5b3e58f") // Replace with your actual UUID
+                val characteristic1UUID =
+                    UUID.fromString("0000abcd-8e22-4541-9d4c-21edae82ed19") // Replace with your actual UUID
+
+//                val service1 =
+//                    gatt.getService(serviceUUID1) // Get the service using the service UUID
+                val characteristic1 =
+                    service2?.getCharacteristic(characteristic1UUID) // Get the characteristic using the characteristic UUID
+
+//                readCharacteristic(gatt, characteristic1)
+//                readCharacteristic(gatt, characteristic2)
+
+
+                val accValue = characteristic1?.value?.let {
+                    characteristic1.getIntValue(
+                        BluetoothGattCharacteristic.FORMAT_UINT32,
+                        0
+                    )
+                }
+                if (characteristic1 != null) {
+                    Log.d(
+                        "CharacteristicValuee",
+                        "UUID: ${characteristic1.uuid}, Value: $accValue"
+                    )
+                }
+
+
+                val pulseValue = pulseCaract?.value?.let {
+                    pulseCaract.getIntValue(
+                        BluetoothGattCharacteristic.FORMAT_UINT8,
+                        0
+                    )
+                }
+                if (pulseCaract != null) {
+                    Log.d(
+                        "CharacteristicValuee",
+                        "UUID: ${pulseCaract.uuid}, Value: $pulseValue"
+                    )
+
+                }
+
+
+// Ajoutez autant de caractéristiques que vous voulez lire
+
+if (pulseCaract!!.uuid == pulseBluetoothGattCharacteristic?.uuid) {
+    Log.e("testje", "UUID pulse: ${characteristic.uuid}")
+    pulseBluetoothGattCharacteristic?.let {
+        val newPulseValueBytes = it.value // Get the raw bytes
+
+        // Convert bytes to integer
+        val newPulseValue = newPulseValueBytes[0].toInt() and 0xFF
+
+        course.pulse.value = newPulseValue.toFloat() // Update the value
+        Log.e("PulseeValue", "Pulse Value: $newPulseValue")
+    } ?: Log.e("PulseeValue", "pulseBluetoothGattCharacteristic is null")
+} else {
+    Log.e("PulseValueVlaue", "UUID does not match: ${characteristic.uuid}")
+}
 
                 if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
                     val newSpeed = convertLittleEndianToFloat(characteristic.value)
 
                     course.realTimeSpeed.value = newSpeed // Update the value
-                    course.speedValues.value = course.speedValues.value + newSpeed // Add the new speed to speedValues
+                    course.speedValues.value =
+                        course.speedValues.value + newSpeed // Add the new speed to speedValues
 
                     Log.e("RealTimeSpeed", "Real Time Speed: $newSpeed") // Log the real time speed
 
@@ -211,7 +456,6 @@ course = Course(
                         )
 
 
-
                     } else {
                         Log.d(
                             "onCharacteristicChanged",
@@ -221,10 +465,29 @@ course = Course(
                 } else {
                     Log.e("RealTimeSpeed", "UUID does not match: ${characteristic.uuid}")
                 }
+                characteristicsQueue.add(characteristic1)
+                characteristicsQueue.add(pulseCaract)
+            }
+
+
+            fun requestCharacteristic() {
+                if (characteristicsQueue.isNotEmpty()) {
+                    val characteristic = characteristicsQueue.peek()
+                    bluetoothGatt?.readCharacteristic(characteristic)
+                }
+            }
+
+            fun handlePulseValue(characteristic: BluetoothGattCharacteristic) {
+                val pulseValue =
+                    characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+                Log.d("PulseValue", "UUID pulse: ${characteristic.uuid}, Value: $pulseValue")
             }
         })
         bluetoothGatt?.connect()
     }
+
+    fun ByteArray.toHexString(): String =
+        joinToString(separator = " ", prefix = "0x") { String.format("%02X", it) }
 
     private fun connectionStateChange(gatt: BluetoothGatt?, newState: Int) {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
@@ -265,19 +528,21 @@ course = Course(
     }
 
 
-//    override fun onStop() {
+    //    override fun onStop() {
 //        super.onStop()
 //        closeBluetoothGatt()
 //    }
-
+    fun isCharacteristicReadable(characteristic: BluetoothGattCharacteristic): Boolean {
+        return characteristic.properties and BluetoothGattCharacteristic.PROPERTY_READ != 0
+    }
 
     fun convertLittleEndianToFloat(bytes: ByteArray): Float {
-    val intBits = bytes[0].toInt() and 0xFF or
-            ((bytes[1].toInt() and 0xFF) shl 8) or
-            ((bytes[2].toInt() and 0xFF) shl 16) or
-            ((bytes[3].toInt() and 0xFF) shl 24)
-    return Float.fromBits(intBits)
-}
+        val intBits = bytes[0].toInt() and 0xFF or
+                ((bytes[1].toInt() and 0xFF) shl 8) or
+                ((bytes[2].toInt() and 0xFF) shl 16) or
+                ((bytes[3].toInt() and 0xFF) shl 24)
+        return Float.fromBits(intBits)
+    }
 
     fun closeBluetoothGatt() {
         deviceInteraction.IsConnected = false
@@ -288,8 +553,6 @@ course = Course(
     fun generateUUID(): String {
         return UUID.randomUUID().toString()
     }
-
-
 
 
 }

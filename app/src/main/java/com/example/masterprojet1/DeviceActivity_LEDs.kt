@@ -24,56 +24,26 @@ import android.content.ServiceConnection
 import android.content.Intent
 
 import android.os.IBinder
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @SuppressLint("MissingPermission")
 class DeviceActivity_LEDs : ComponentActivity() {
-
-    private var bluetoothGatt: BluetoothGatt? = null
-    private lateinit var deviceInteraction: DeviceComposableInteraction
-    private lateinit var course: Course
-
-    private var bluetoothService: BluetoothService? = null
-    private var device: BluetoothDevice? = null // Define device as a property of DeviceActivity
-
-    private var isConnecting by mutableStateOf(false)
-    private var isConnected by mutableStateOf(false)
-
-    //private var currentLEDStateEnum = LEDStateEnum.NONE
-
-    private var deviceConnectionService: DeviceConnectionService? = null
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as DeviceConnectionService.LocalBinder
-            deviceConnectionService = binder.getService()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            deviceConnectionService = null
-        }
-    }
-    override fun onStart() {
-        super.onStart()
-        Intent(this, DeviceConnectionService::class.java).also { intent ->
-            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-//        super.onStop()
-//        unbindService(serviceConnection)
-//        deviceConnectionService = null
-    }
-
-    fun isDeviceConnected(): Boolean {
-        return deviceConnectionService?.isDeviceConnected() ?: false
-    }
-
 
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,86 +52,39 @@ class DeviceActivity_LEDs : ComponentActivity() {
         val device = intent.getParcelableExtra<BluetoothDevice?>("device")
 
         setContent {
-            val isStateConnected = remember { mutableStateOf(false) }
 
-            deviceInteraction = DeviceComposableInteraction(
-                IsConnected = isStateConnected.value,
-                deviceTitle = device?.name ?: "Device Unknown",
-//                realTimeSpeed = mutableStateOf(0f) // Initialize realTimeSpeed with 0f
-            )
-            if (!isConnecting && !isConnected) {
-                Text("Connexion en cours...")
-                isConnecting = true
-                connectToDevice(device)
-            } else if (isConnected) {
-                Text("Connexion établie")
-                Button(onClick = {
-                    val intent = Intent(this@DeviceActivity_LEDs, LEDsParamActivity::class.java)
-                    startActivity(intent)
-                }) {
-                    Text("Paramêtrer les LEDs")
-                }
-            }
-        }
-
-        val intent = Intent(this, BluetoothService::class.java)
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-    }
-    override fun onDestroy() {
-        super.onDestroy()
-        unbindService(serviceConnection)
-    }
-
-    private fun connectToDevice(device: BluetoothDevice?) {
-        bluetoothGatt = device?.connectGatt(this, true, object : BluetoothGattCallback() {
-            override fun onConnectionStateChange(
-                gatt: BluetoothGatt?,
-                status: Int,
-                newState: Int
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                super.onConnectionStateChange(gatt, status, newState)
-                connectionStateChange(gatt, newState)
-            }
-        })
-        bluetoothGatt?.connect()
-    }
+                // Utilisez une colonne pour aligner verticalement le texte et le bouton
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "You need to connect to the LEDs Ribbon to configure it",
+                        textAlign = TextAlign.Center,
+                        fontSize = 20.sp,
+                        //fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .fillMaxWidth()
+                    )
 
-    private fun connectionStateChange(gatt: BluetoothGatt?, newState: Int) {
-        if (newState == BluetoothProfile.STATE_CONNECTED) {
-            gatt?.discoverServices()
-            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show()
-            isConnected = true
-            isConnecting = false
-        }
-        runOnUiThread {
-            if (::deviceInteraction.isInitialized) {
-                deviceInteraction.IsConnected = newState == BluetoothProfile.STATE_CONNECTED
-                if (deviceInteraction.IsConnected) {
-                    Toast.makeText(this, "Connecté", Toast.LENGTH_SHORT).show()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(onClick = {
+                        val intent = Intent(this@DeviceActivity_LEDs, ScanActivity_LEDs::class.java)
+                        startActivity(intent)
+                    }) {
+                        Text("Access to LEDs Parametrization")
+                    }
                 }
             }
         }
-    }
-
-//    private fun logServices(gatt: BluetoothGatt?) {
-//        gatt?.services?.forEach { service ->
-//            Log.d("logfun", "Service UUID: ${service.uuid}")
-//            service.characteristics.forEach { characteristic ->
-//                Log.d("logfun", "Characteristic UUID: ${characteristic.uuid}")
-//            }
-//        }
-//    }
-
-//    override fun onStop() {
-//        super.onStop()
-//        closeBluetoothGatt()
-//    }
-
-    private fun closeBluetoothGatt() {
-        deviceInteraction.IsConnected = false
-        bluetoothGatt?.close()
-        bluetoothGatt = null
     }
 }
+
 
 

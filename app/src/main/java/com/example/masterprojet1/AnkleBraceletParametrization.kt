@@ -28,7 +28,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -38,9 +42,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
+import java.nio.ByteBuffer
 import java.util.UUID
 
 class AnkleBraceletParametrization : ComponentActivity() {
@@ -109,81 +115,150 @@ class AnkleBraceletParametrization : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val isStateConnected = remember { mutableStateOf(false) }
-
-                    val device = intent.getParcelableExtra<BluetoothDevice>("device")
-                    if (device != null) {
-                        Log.e("devicejusteapresintent", "$device")
-                    } else {
-                        Log.e("DeviceActivity", "BluetoothDevice est null")
-                    }
-
-                    deviceInteraction = DeviceComposableInteraction(
-                        IsConnected = isStateConnected.value,
-                        deviceTitle = device?.name ?: "Device Unknown",
-//                realTimeSpeed = mutableStateOf(0f) // Initialize realTimeSpeed with 0f
-                    )
-
-                    // Dans l'activité AnkleBraceletParametrization
-
-
-                    var showAdditionalFields by remember { mutableStateOf(false) }
-                    var showAdditionalFieldstwo by remember { mutableStateOf(false) }
-
-                    var checkedState by remember { mutableStateOf(false) }
-                    var checkedStatetwo by remember { mutableStateOf(false) }
-
-                    var minSpeed by remember { mutableStateOf("") }
-                    var maxSpeed by remember { mutableStateOf("") }
-
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    var context = LocalContext.current
+                    ModalNavigationDrawer(
+                        drawerContent = {
+                            ModalDrawerSheet {
+                                Text("SPR MENU", modifier = Modifier.padding(16.dp))
+                                Divider()
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Profile") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, ProfileActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Historique") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, DeviceActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Ankle Bracelet Parametrization") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(
+                                            context,
+                                            AnkleBraceletParametrization::class.java
+                                        )
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "LEDs Ribbon Parametrization") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, DeviceActivity_LEDs::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Help") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, HelpActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Who are we ? What is SoundPaceRunners ?") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, CreatorsActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Contact Form") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, ContactForm::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                            }
+                        }
                     ) {
-                        Log.e("device","$device")
+                        val isStateConnected = remember { mutableStateOf(false) }
+
+                        val device = intent.getParcelableExtra<BluetoothDevice>("device")
                         if (device != null) {
-                            connectToDevice(device)
+                            Log.e("devicejusteapresintent", "$device")
+                        } else {
+                            Log.e("DeviceActivity", "BluetoothDevice est null")
                         }
-                        Text(
-                            text = "Ankle Bracelet Parametrization",
-                            //style = MaterialTheme.typography.h6,
-                            modifier = Modifier.padding(vertical = 8.dp)
+
+                        deviceInteraction = DeviceComposableInteraction(
+                            IsConnected = isStateConnected.value,
+                            deviceTitle = device?.name ?: "Device Unknown",
+//                realTimeSpeed = mutableStateOf(0f) // Initialize realTimeSpeed with 0f
                         )
 
-                        TextField(
-                            value = minSpeed,
-                            onValueChange = { minSpeed = it },
-                            label = { Text("Vitesse minimale") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                        // Dans l'activité AnkleBraceletParametrization
 
-                        TextField(
-                            value = maxSpeed,
-                            onValueChange = { maxSpeed = it },
-                            label = { Text("Vitesse maximale") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
 
-                        Button(
-                            onClick = {
-                                writetocharac(minSpeed.toInt(), 0)
-                                Log.e("firstwrite", "firstwrite")
-                                writetocharac(maxSpeed.toInt(), 1)
-                                Log.e("secondwrite", "secondwrite")
-                                finish()
-                            },
-                            modifier = Modifier.padding(top = 16.dp)
+                        var showAdditionalFields by remember { mutableStateOf(false) }
+                        var showAdditionalFieldstwo by remember { mutableStateOf(false) }
+
+                        var checkedState by remember { mutableStateOf(false) }
+                        var checkedStatetwo by remember { mutableStateOf(false) }
+
+                        var minSpeed by remember { mutableStateOf("7.30") }
+                        var maxSpeed by remember { mutableStateOf("6") }
+
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("OK, faire la course")
-                        }
+                            Log.e("device", "$device")
+                            if (device != null) {
+                                connectToDevice(device)
+                            }
+                            Text(
+                                text = "Ankle Bracelet Parametrization",
+                                //style = MaterialTheme.typography.h6,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
 
-                        Text(
-                            text = "L'accélérometre est activé par défaut, obligatoire pour les différentes mesures",
-                            //style = MaterialTheme.typography.h6,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                            TextField(
+                                value = minSpeed,
+                                onValueChange = { minSpeed = it },
+                                label = { Text("Vitesse minimale (min/km)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+
+                            TextField(
+                                value = maxSpeed,
+                                onValueChange = { maxSpeed = it },
+                                label = { Text("Vitesse maximale (min/km)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+
+                            Button(
+                                onClick = {
+                                    writetocharac_float(minSpeed.toFloat(), 0)
+                                    Log.e("firstwrite", "firstwrite")
+                                    writetocharac_float(maxSpeed.toFloat(), 1)
+                                    Log.e("secondwrite", "secondwrite")
+                                    finish()
+                                },
+                                modifier = Modifier.padding(top = 16.dp)
+                            ) {
+                                Text("OK, faire la course")
+                            }
+
+                            Text(
+                                text = "L'accélérometre est activé par défaut, obligatoire pour les différentes mesures",
+                                //style = MaterialTheme.typography.h6,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -297,6 +372,24 @@ class AnkleBraceletParametrization : ComponentActivity() {
 
     fun intToByteArray(value: Int): ByteArray {
         return byteArrayOf(value.toByte())
+    }
+
+    fun writetocharac_float(value: Float, nb: Int) {
+        // Convertir le float en tableau de bytes
+        Log.e("dans fonction writetocharac", "writetochara")
+        Log.e("dans fonction writetocharac", "gatt : $gatt")
+        Log.e("valuetobyte", "$value")
+
+        val byteArray = floatToByteArray(value)
+        Log.e("avant writee", "avantwritechar")
+
+        // Écrire la valeur dans la caractéristique BLE
+        writeValueToCharacteristic(byteArray, nb)
+    }
+
+    fun floatToByteArray(value: Float): ByteArray {
+        // Utiliser ByteBuffer pour convertir le float en un tableau de bytes
+        return ByteBuffer.allocate(4).putFloat(value).array()
     }
 
     @SuppressLint("MissingPermission")

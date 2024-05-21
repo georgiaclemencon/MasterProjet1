@@ -20,4 +20,6 @@
     <string name="title_activity_historique">Historique</string>
     <string name="title_activity_new_course">NewCourse</string>
     <string name="title_activity_device_leds">DeviceActivity_LEDs</string>
+    <string name="title_activity_leds">ActivityLEDs</string>
+    <string name="title_activity_scan_leds">ScanActivity_LEDs</string>
 </resources>

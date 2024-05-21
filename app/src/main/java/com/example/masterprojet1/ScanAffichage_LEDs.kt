@@ -35,37 +35,37 @@ import androidx.compose.ui.unit.dp
 
 
 @Composable
-fun ScanActivityUI(
-    scanInteraction: ScanComposableInteraction
+fun ScanActivityUI_LEDs(
+    scanInteraction_LEDs: ScanComposableInteraction_LEDs
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Scan Activity Ankle Bracelet", modifier = Modifier.padding(16.dp))
+        Text(text = "Scan Activity LEDs", modifier = Modifier.padding(16.dp))
         Image(
             painter = painterResource(
-                id = if (scanInteraction.isSquareIcon.value) R.drawable.soundpacerunnerslogo else R.drawable.ampoule_vide
+                id = if (scanInteraction_LEDs.isSquareIcon.value) R.drawable.soundpacerunnerslogo else R.drawable.ampoule_vide
             ),
             contentDescription = "Scan Icon",
             modifier = Modifier
                 .size(150.dp)
                 .padding(16.dp)
                 .clickable(onClick = {
-                    scanInteraction.toggleButtonPlayScan(scanInteraction.deviceResults)
+                    scanInteraction_LEDs.toggleButtonPlayScan_LEDs(scanInteraction_LEDs.deviceResults)
                 })
         )
 
         Text(
-            text = if (scanInteraction.isScanning.value) "Scanning..." else "Click the icon to start scanning",
+            text = if (scanInteraction_LEDs.isScanning.value) "Scanning..." else "Click the icon to start scanning",
             modifier = Modifier.padding(16.dp)
         )
-        if (scanInteraction.isScanning.value) {
+        if (scanInteraction_LEDs.isScanning.value) {
             LinearProgressIndicator(modifier = Modifier.padding(16.dp))
         } else {
             Spacer(modifier = Modifier.height(16.dp))
         }
-        DisplayDevices(scanInteraction.isScanning, scanInteraction.deviceResults )
+        DisplayDevices_LEDs(scanInteraction_LEDs.isScanning, scanInteraction_LEDs.deviceResults )
     }
 }
 
@@ -99,7 +99,7 @@ fun ScanActivityUI(
 //}
 
 @Composable
-fun BluetoothDisabledScreen() {
+fun BluetoothDisabledScreen_LEDs() {
     val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -116,7 +116,7 @@ fun BluetoothDisabledScreen() {
 }
 
 @Composable
-fun BluetoothNotSupportedScreen() {
+fun BluetoothNotSupportedScreen_LEDs() {
     val context = LocalContext.current
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -145,7 +145,7 @@ fun BluetoothNotSupportedScreen() {
 //    Device("Device 4", "00:00:00:00:00:03", 20)
 //)
 
-class ScanComposableInteraction(
+class ScanComposableInteraction_LEDs(
     var isScanning: MutableState<Boolean>,
     var isSquareIcon: MutableState<Boolean>,
     var deviceResults: MutableList<ScanResult>,
@@ -153,13 +153,13 @@ class ScanComposableInteraction(
 //    val onIconClick: Unit,
     val bleScanManager: BleScanManager
 ) {
-    fun toggleButtonPlayScan(scanResults: List<ScanResult>) {
+    fun toggleButtonPlayScan_LEDs(scanResults: List<ScanResult>) {
         if (isScanning.value) {
             isScanning.value = false
-            stopBleScan()
+            stopBleScan_LEDs()
         } else {
             isScanning.value = true
-            startBleScan()
+            startBleScan_LEDs()
         }
         isSquareIcon.value = !isSquareIcon.value
 
@@ -168,15 +168,15 @@ class ScanComposableInteraction(
 //            deviceResults.addAll(scanResults)
 //        } else {
 //            deviceResults.clear()
-//        }toggleButtonPlayScan
+//        }toggleButtonPlayScan_LEDs
     }
 
-    private fun startBleScan() {
+    private fun startBleScan_LEDs() {
         deviceResults.clear()
         bleScanManager.scanBleDevices()
     }
 
-    private fun stopBleScan() {
+    private fun stopBleScan_LEDs() {
         bleScanManager.stopBleScan()
     }
 }
@@ -184,7 +184,7 @@ class ScanComposableInteraction(
 
 @Composable
 @SuppressLint("MissingPermission")
-fun DisplayDevices(isScanning: MutableState<Boolean>, results: MutableList<ScanResult>) {
+fun DisplayDevices_LEDs(isScanning: MutableState<Boolean>, results: MutableList<ScanResult>) {
     val context = LocalContext.current // Get the current context
     LazyColumn {
         items(results) { result ->
@@ -194,7 +194,7 @@ fun DisplayDevices(isScanning: MutableState<Boolean>, results: MutableList<ScanR
                     .fillMaxWidth()
                     .clickable {
                         // Create an Intent to start DeviceActivity
-                        val intent = Intent(context, DeviceActivity::class.java)
+                        val intent = Intent(context, LEDsParamActivity::class.java)
                         // Put the device address as an extra in the Intent
                         intent.putExtra("device", result.device)
                         intent.putExtra("device_address", result.device.address)
@@ -209,17 +209,15 @@ fun DisplayDevices(isScanning: MutableState<Boolean>, results: MutableList<ScanR
                         context.startActivity(intent)
                     }
             ) {
-                DisplayDeviceUnit(result)
+                DisplayDeviceUnit_LEDs(result)
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
-
-
 @Composable
-fun DistanceIndicator(distance: Int) {
+fun DistanceIndicator_LEDs(distance: Int) {
     Box(
         modifier = Modifier
             .size(50.dp)
@@ -236,7 +234,7 @@ fun DistanceIndicator(distance: Int) {
 }
 @SuppressLint("MissingPermission")
 @Composable
-fun DisplayDeviceUnit(device: ScanResult) {
+fun DisplayDeviceUnit_LEDs(device: ScanResult) {
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -246,7 +244,7 @@ fun DisplayDeviceUnit(device: ScanResult) {
         Text("Adresse MAC : ${device.device.address}")
         Text("Force du signal (RSSI) : ${device.rssi} dBm")
         Text("Services annoncés : ${device.scanRecord?.serviceUuids?.joinToString() ?: "Aucun"}")
-        DistanceIndicator(device.rssi)
+        DistanceIndicator_LEDs(device.rssi)
     }
 }
 

@@ -69,7 +69,7 @@ class HelpActivity : ComponentActivity() {
                                 NavigationDrawerItem(
                                     label = { Text(text = "LEDs Ribbon Parametrization") },
                                     selected = false,
-                                    onClick = { val intent = Intent(context, LEDsParamActivity::class.java)
+                                    onClick = { val intent = Intent(context, DeviceActivity_LEDs::class.java)
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(

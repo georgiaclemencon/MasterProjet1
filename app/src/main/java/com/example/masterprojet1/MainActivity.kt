@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.height(46.dp))
 
                         Text(
-                            text = "Welcome to the MASTER PROJET APP. Click the button below to start scanning for nearby devices",
+                            text = "Welcome to the MASTER PROJET APP. \n Click the button below to start scanning for nearby devices.",
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))

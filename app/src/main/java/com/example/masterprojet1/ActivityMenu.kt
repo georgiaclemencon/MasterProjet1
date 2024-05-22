@@ -133,7 +133,7 @@ class ActivityMenu : ComponentActivity() {
         shape = RoundedCornerShape(8.dp)
     ) {
         Text(
-            text = "se connecter au bracelet",
+            text = "Connect to the bracelet",
 
         )
     }

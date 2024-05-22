@@ -3,7 +3,6 @@ package com.example.masterprojet1
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
 import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -15,9 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,128 +69,181 @@ fun DeviceDetail(
 
     //val deviceActivity = DeviceActivity()
 
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+    var context = LocalContext.current
+    ModalNavigationDrawer(
+        drawerContent = {
+            ModalDrawerSheet {
+                Text("SPR MENU", modifier = Modifier.padding(16.dp))
+                Divider()
+                NavigationDrawerItem(
+                    label = { Text(text = "Profile") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, ProfileActivity::class.java)
+                        context.startActivity(intent) }
+                )
+                NavigationDrawerItem(
+                    label = { Text(text = "Historique") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, DeviceActivity::class.java)
+                        context.startActivity(intent) }
+                )
+                NavigationDrawerItem(
+                    label = { Text(text = "Ankle Bracelet Parametrization") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, AnkleBraceletParametrization::class.java)
+                        context.startActivity(intent) }
+                )
+                NavigationDrawerItem(
+                    label = { Text(text = "LEDs Ribbon Parametrization") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, DeviceActivity_LEDs::class.java)
+                        context.startActivity(intent) }
+                )
+                NavigationDrawerItem(
+                    label = { Text(text = "Help") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, HelpActivity::class.java)
+                        context.startActivity(intent) }
+                )
+                NavigationDrawerItem(
+                    label = { Text(text = "Who are we ? What is SoundPaceRunners ?") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, CreatorsActivity::class.java)
+                        context.startActivity(intent) }
+                )
+                NavigationDrawerItem(
+                    label = { Text(text = "Contact Form") },
+                    selected = false,
+                    onClick = { val intent = Intent(context, ContactForm::class.java)
+                        context.startActivity(intent) }
+                )
+            }
+        }
     ) {
-        Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text("Nom du périphérique : ${deviceInteraction.value.deviceTitle}")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = {
+                        onConnectClick()
+                        isclicked = !isclicked
+                        if (isclicked) {
+                            //deviceActivity.writetocharac(0x01,0)
+                            isRunning = true
+                            //istimer=false
+                            countdownTimer = 3 // Reset countdown timer
+                            time = 0 // Reset the stopwatch
+                        }
+                    },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text("Demarrer une course")
+                }
+                IconButton(
+                    onClick = {
+                        val intent =
+                            Intent(deviceActivity, AnkleBraceletParametrization::class.java)
+                        Log.e("device", "$device")
+                        intent.putExtra("device", device)
+                        deviceActivity.startActivity(intent)
+                    },
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                }
+            }
+
+            if (isclicked) {
+                LaunchedEffect(isRunning) {
+                    while (isRunning && countdownTimer > 0) {
+                        Log.e("countdowntimer", "$countdownTimer")
+                        //if(!istimer){
+                        deviceActivity.writetocharac(0x01, 0)
+                        //istimer=true
+                        //}
+                        delay(1000L)
+                        countdownTimer--
+                    }
+                    isRunning = true
+                }
+            }
+
+            if (isclicked && countdownTimer <= 0) {
+                LaunchedEffect(isRunning) {
+                    while (isRunning) {
+                        delay(1000L)
+                        time++
+                    }
+                }
+            }
+
+            val elapsedTimeInHours = time / 3600
+            val elapsedTimeInMinutes = (time % 3600) / 60
+            val elapsedTimeInSeconds = time % 60
+            val elapsedTimeInMilliseconds = (time * 1000) % 1000
+            Text(
+                text = if (countdownTimer > 0) {
+                    "$countdownTimer"
+                } else {
+                    "Chronos: ${
+                        String.format(
+                            "%02d:%02d:%02d:%03d",
+                            elapsedTimeInHours,
+                            elapsedTimeInMinutes,
+                            elapsedTimeInSeconds,
+                            elapsedTimeInMilliseconds
+                        )
+                    }"
+                },
+                style = TextStyle(
+                    fontSize = 35.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            )
+
             Button(
                 onClick = {
-                    onConnectClick()
-                    isclicked = !isclicked
-                    if (isclicked) {
-                        //deviceActivity.writetocharac(0x01,0)
-                        isRunning = true
-                        //istimer=false
-                        countdownTimer = 3 // Reset countdown timer
-                        time = 0 // Reset the stopwatch
-                    }
-                },
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text("Demarrer une course")
-            }
-            IconButton(
-                onClick = {
-                    val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
-                    Log.e("device","$device")
-                    intent.putExtra("device", device)
+                    val intent = Intent(deviceActivity, Historique::class.java)
                     deviceActivity.startActivity(intent)
                 },
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
             ) {
-                Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                Text("Voir l'historique")
             }
-        }
-
-        if(isclicked){
-            LaunchedEffect(isRunning) {
-                while (isRunning && countdownTimer > 0) {
-                    Log.e("countdowntimer","$countdownTimer")
-                    //if(!istimer){
-                    deviceActivity.writetocharac(0x01,0)
-                    //istimer=true
-                    //}
-                    delay(1000L)
-                    countdownTimer--
-                }
-                isRunning = true
-            }
-        }
-
-        if (isclicked && countdownTimer <= 0) {
-            LaunchedEffect(isRunning) {
-                while (isRunning) {
-                    delay(1000L)
-                    time++
-                }
-            }
-        }
-
-        val elapsedTimeInHours = time / 3600
-        val elapsedTimeInMinutes = (time % 3600) / 60
-        val elapsedTimeInSeconds = time % 60
-        val elapsedTimeInMilliseconds = (time * 1000) % 1000
-        Text(
-            text = if (countdownTimer > 0) {
-                "$countdownTimer"
-            } else {
-                "Chronos: ${
-                    String.format(
-                        "%02d:%02d:%02d:%03d",
+            Button(
+                onClick = {
+                    val elapsedTime = String.format(
+                        "%02d:%02d:%02d",
                         elapsedTimeInHours,
                         elapsedTimeInMinutes,
-                        elapsedTimeInSeconds,
-                        elapsedTimeInMilliseconds
+                        elapsedTimeInSeconds
                     )
-                }"
-            },
-            style = TextStyle(
-                fontSize = 35.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-        )
+                    val newCourseIntent = Intent(deviceActivity, NewCourse::class.java)
+                    newCourseIntent.putExtra("EXTRA_CHRONOS", elapsedTime)
+                    newCourseIntent.putExtra("courseId", courseId)
 
-        Button(
-            onClick = {
-                val intent = Intent(deviceActivity, Historique::class.java)
-                deviceActivity.startActivity(intent)
-            },
-            modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
-        ) {
-            Text("Voir l'historique")
-        }
-        Button(
-            onClick = {
-                val elapsedTime = String.format(
-                    "%02d:%02d:%02d",
-                    elapsedTimeInHours,
-                    elapsedTimeInMinutes,
-                    elapsedTimeInSeconds
-                )
-                val newCourseIntent = Intent(deviceActivity, NewCourse::class.java)
-                newCourseIntent.putExtra("EXTRA_CHRONOS", elapsedTime)
-                newCourseIntent.putExtra("courseId", courseId)
+                    deviceActivity.startActivity(newCourseIntent)
+                    isRunning = false
+                    deviceActivity.closeBluetoothGatt()
+                },
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("Arreter une course")
+            }
 
-                deviceActivity.startActivity(newCourseIntent)
-                isRunning = false
-                deviceActivity.closeBluetoothGatt()
-            },
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text("Arreter une course")
-        }
-
-        DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel
+            DisplayRealTimeSpeed(course) // Affiche la vitesse en temps réel
 //        DisplayAverageSpeed(deviceActivity, deviceInteraction)
 //        MyComposable(course) // Call MyComposable here
+        }
     }
 }
 
@@ -198,6 +255,10 @@ fun TestChart() {
     val lineChart = createLineChart(testData)
     lineChart()
 }
+
+//fun startActivity(intent: Intent?) {
+//    this.startActivity(intent, null)
+//}
 
 fun createLineChart(accelerometerData: MutableState<List<Int>>): @Composable () -> Unit {
     return {

@@ -33,11 +33,6 @@
             android:label="@string/title_activity_scan_leds"
             android:theme="@style/Theme.MasterProjet1" />
         <activity
-            android:name=".ActivityLEDs"
-            android:exported="false"
-            android:label="@string/title_activity_leds"
-            android:theme="@style/Theme.MasterProjet1" />
-        <activity
             android:name=".DeviceActivity_LEDs"
             android:exported="false"
             android:label="@string/title_activity_device_leds"

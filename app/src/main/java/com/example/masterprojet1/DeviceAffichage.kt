@@ -67,15 +67,17 @@ fun DeviceDetail(
             horizontalArrangement = Arrangement.Center // Centrer horizontalement les éléments dans la rangée
         ) {
             Button(
-                onClick = {
-                    onConnectClick()
-                    // Set isRunning to true when the button is clicked
-                    isRunning = true
-                          },
-                modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
-            ) {
-                Text("Demarrer une course")
-            }
+    onClick = {
+        onConnectClick()
+        // Set isRunning to true when the button is clicked
+        isRunning = true
+        // Reset time to 0 when the button is clicked
+        time = 0
+    },
+    modifier = Modifier.padding(8.dp) // Ajouter du padding pour augmenter la taille du bouton
+) {
+    Text("Demarrer une course")
+}
             IconButton(
                 onClick = {
                     val intent = Intent(deviceActivity, AnkleBraceletParametrization::class.java)
@@ -100,7 +102,7 @@ fun DeviceDetail(
         Text(
             "Chronos: ${
                 String.format(
-                    "%02d:%02d:%02d:%03d",
+                    "%02d:%02d:%02d",
                     elapsedTimeInHours,
                     elapsedTimeInMinutes,
                     elapsedTimeInSeconds,
@@ -133,7 +135,9 @@ fun DeviceDetail(
                 )
                 val newCourseIntent = Intent(deviceActivity, NewCourse::class.java)
                 newCourseIntent.putExtra("EXTRA_CHRONOS", elapsedTime)
-                newCourseIntent.putExtra("courseId", courseId)
+                newCourseIntent.putExtra("courseId", course.id)
+                newCourseIntent.putExtra("pulseValue", course.pulse.value)
+                Log.e("pulseValueMax", "Pulse Value dans AFFichage : ${course.pulse.value}")
 
                 deviceActivity.startActivity(newCourseIntent)
                 isRunning = false
@@ -276,7 +280,7 @@ fun DisplayRealTimeSpeed(course: Course) {
 
 
 data class Course(
-    val id: Int = 0,
+    var id: String="",
     val date: Date,
     var position: String, // Vous devez obtenir la position actuelle et la convertir en String
     var maxSpeed: Float,

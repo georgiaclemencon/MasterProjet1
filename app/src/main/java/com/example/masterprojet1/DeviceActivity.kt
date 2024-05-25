@@ -84,14 +84,11 @@ class DeviceActivity : ComponentActivity() {
         // Generate a unique identifier for the course
         val database = Firebase.database
 
-// In your method
         courseId = generateUUID()
-        newCourseIntent = Intent(this, NewCourse::class.java)
-        newCourseIntent.putExtra(
-            "courseId",
-            courseId
-        ) // Replace "your_course_id" with the actual course id
-        Log.e("DeviceActivity", "Putting courseId in intent: $courseId")
+        if (::course.isInitialized) {
+            course.id = courseId as String
+        }
+        Log.e("COURSEID", "Putting courseId in intent: $courseId")
     }
 
     fun isDeviceConnected(): Boolean {
@@ -127,7 +124,7 @@ class DeviceActivity : ComponentActivity() {
 
 
             course = Course(
-                id = 0,
+                id = courseId as String,
                 date = Date(),
                 position = "0.0,0.0",
                 maxSpeed = 0f,
@@ -153,49 +150,9 @@ class DeviceActivity : ComponentActivity() {
     }
 
 
-//    fun BluetoothGattCharacteristic.isIndicatable(): Boolean {
-//        return properties and BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
-//    }
-//
-//    fun BluetoothGattCharacteristic.isNotifiable(): Boolean {
-//        return properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0
-//    }
-
-
-//    fun enableNotifications(characteristic: BluetoothGattCharacteristic) {
-//
-//        val cccdUuid = UUID.fromString(CCC_DESCRIPTOR_UUID)
-//        val payload = when {
-//            characteristic.isIndicatable() -> BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
-//            characteristic.isNotifiable() -> BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-//
-//            else -> {
-//                Log.e(
-//                    "enableNotifications",
-//                    "${characteristic.uuid} doesn't support notifications/indications"
-//                )
-//                return
-//            }
-//        }
-//
-//        characteristic.getDescriptor(cccdUuid)?.let { cccDescriptor ->
-//            if (bluetoothGatt?.setCharacteristicNotification(characteristic, true) == false) {
-//                Log.e(
-//                    "enableNotifications",
-//                    "setCharacteristicNotification failed for ${characteristic.uuid}"
-//                )
-//                return
-//            }
-//        } ?: Log.e(
-//            "enableNotifications",
-//            "${characteristic.uuid} doesn't contain the CCC descriptor!"
-//        )
-//    }
-
-
     @OptIn(ExperimentalStdlibApi::class)
     private fun connectToDevice(device: BluetoothDevice?) {
-        val descriptorWriteQueue: Queue<BluetoothGattDescriptor> = LinkedList();
+        val descriptorWriteQueue: Queue<BluetoothGattDescriptor> = LinkedList()
         bluetoothGatt = device?.connectGatt(this, true, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(
                 gatt: BluetoothGatt?,
@@ -238,7 +195,6 @@ class DeviceActivity : ComponentActivity() {
                 val cccDescriptorUUID_acc = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
 
-
                 var service = gatt?.getService(serviceUUID_acc)
                 var characteristic = service?.getCharacteristic(characteristicUUID_acc)
 
@@ -249,13 +205,13 @@ class DeviceActivity : ComponentActivity() {
                         "AccNotification",
                         "Notification set: $notificationSet, je suis bien abonnée à la notification de acc"
                     )
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@DeviceActivity,
-                            "Abonné à la caractéristique : ${characteristic!!.uuid}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+//                    runOnUiThread {
+//                        Toast.makeText(
+//                            this@DeviceActivity,
+//                            "Abonné à la caractéristique : ${characteristic!!.uuid}",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
                     val descriptor = characteristic.getDescriptor(cccDescriptorUUID_acc)
                     descriptor?.let {
                         it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -280,13 +236,13 @@ class DeviceActivity : ComponentActivity() {
                         "PulseNotification",
                         "Notification set: $notificationSet, je suis bien abonnée à la notification de pulse"
                     )
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@DeviceActivity,
-                            "Abonné à la caractéristique : ${characteristic.uuid}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+//                    runOnUiThread {
+//                        Toast.makeText(
+//                            this@DeviceActivity,
+//                            "Abonné à la caractéristique : ${characteristic.uuid}",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
                     val descriptor = characteristic.getDescriptor(cccDescriptorUUID_acc)
                     descriptor?.let {
                         it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -299,23 +255,6 @@ class DeviceActivity : ComponentActivity() {
                 }
             }
 
-
-//      private fun readpulse() {
-//    Log.d("readpulse", "Starting to read pulse...")
-//    bluetoothGatt?.discoverServices()
-//    val pulseServiceUuid = UUID.fromString("0000aaaa-0000-1000-8000-00805f9b34fb")
-//    val pulseLevelCharUuid = UUID.fromString("0000eeee-0000-1000-8000-00805f9b34fb")
-//    val pulseService = bluetoothGatt?.getService(pulseServiceUuid)
-//    Log.d("readpulse", "Pulse service: $pulseService")
-//    val pulseLevelChar = pulseService?.getCharacteristic(pulseLevelCharUuid)
-//    Log.d("readpulse", "Pulse level characteristic: $pulseLevelChar")
-//    if (pulseLevelChar?.isReadable() == true) {
-//        Log.d("readpulse", "Pulse level characteristic is readable, reading characteristic...")
-//        bluetoothGatt?.readCharacteristic(pulseLevelChar)
-//    } else {
-//        Log.d("readpulse", "Pulse level characteristic is not readable")
-//    }
-//}
 
             override fun onCharacteristicRead(
                 gatt: BluetoothGatt,
@@ -416,20 +355,38 @@ class DeviceActivity : ComponentActivity() {
 
 // Ajoutez autant de caractéristiques que vous voulez lire
 
-if (pulseCaract!!.uuid == pulseBluetoothGattCharacteristic?.uuid) {
-    Log.e("testje", "UUID pulse: ${characteristic.uuid}")
-    pulseBluetoothGattCharacteristic?.let {
-        val newPulseValueBytes = it.value // Get the raw bytes
+                if (pulseCaract!!.uuid == pulseBluetoothGattCharacteristic?.uuid) {
+                    Log.e("testje", "UUID pulse: ${characteristic.uuid}")
+                    pulseBluetoothGattCharacteristic?.let {
 
-        // Convert bytes to integer
-        val newPulseValue = newPulseValueBytes[0].toInt() and 0xFF
+                        it.value?.let { value ->
+                            val newPulseValueBytes = value // Get the raw bytes
 
-        course.pulse.value = newPulseValue.toFloat() // Update the value
-        Log.e("PulseeValue", "Pulse Value: $newPulseValue")
-    } ?: Log.e("PulseeValue", "pulseBluetoothGattCharacteristic is null")
-} else {
-    Log.e("PulseValueVlaue", "UUID does not match: ${characteristic.uuid}")
-}
+                            // Convert bytes to integer
+                            val newPulseValue = newPulseValueBytes[0].toInt() and 0xFF
+
+                            Log.e("PulseeValue", "Pulse Value: $newPulseValue")
+
+// Get a reference to the Firebase database
+                            val database = Firebase.database
+
+// Use the unique id in the reference path
+                            val pulseMaxRef =
+                                database.getReference("users/course/${this@DeviceActivity.courseId}/vheartBeat")
+
+// Set the maximum pulse value in Firebase
+                            pulseMaxRef.setValue(newPulseValue)
+
+// Update course.pulse.value only if newPulseValue is greater
+                            if (newPulseValue.toFloat() > course.pulse.value) {
+                                course.pulse.value = newPulseValue.toFloat()
+                                Log.d("PulseValueMax", "Pulse Value stockéé: ${course.pulse.value}")
+                            }
+                        } ?: Log.e("PulseeValue", "pulseBluetoothGattCharacteristic value is null")
+                    }
+                } else {
+                    Log.e("PulseValueVlaue", "UUID does not match: ${characteristic.uuid}")
+                }
 
                 if (characteristic.uuid == realSpeedBluetoothGattCharacteristic?.uuid) {
                     val newSpeed = convertLittleEndianToFloat(characteristic.value)

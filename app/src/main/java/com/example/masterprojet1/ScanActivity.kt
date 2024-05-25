@@ -59,7 +59,6 @@ class ScanActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         btManager = getSystemService(BluetoothManager::class.java)
         bleScanManager = BleScanManager(btManager, 10000, scanCallback = BleScanCallback({ result ->
             if (result != null) {

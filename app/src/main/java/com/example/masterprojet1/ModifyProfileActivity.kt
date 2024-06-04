@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.camera.core.ImageCapture
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,61 +18,74 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.masterprojet1.model.User
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import java.util.concurrent.ExecutorService
 
 class ModifyProfileActivity : ComponentActivity() {
 
     private lateinit var imageCapture: ImageCapture
     private lateinit var cameraExecutor: ExecutorService
+
     @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         var currentUsername = mutableStateOf("")
+        val photoUrl = mutableStateOf("")
+
         val authEmail = FirebaseAuth.getInstance().currentUser?.email
         if (authEmail != null) {
             Log.d("EMAIL", "Email: $authEmail")
-            GetUserfromEmail(authEmail, currentUsername)
+            findUsernameByEmail(authEmail) { username ->
+                if (username != null) {
+                    currentUsername.value = username
+                    Log.d("ProfileActivity", "Username found: $username")
+                } else {
+                    Log.d("ProfileActivity", "Username not found for email: $authEmail")
+                }
+            }
+            findPhotoUrlByEmail(authEmail) { url ->
+                if (url != null) {
+                    photoUrl.value = url
+                    Log.d("ProfileActivity", "Photo URL found: $url")
+                } else {
+                    Log.d("ProfileActivity", "Photo URL not found for email: $authEmail")
+                }
+            }
         }
+
+        Log.d("currentusername", "currentUsername : ${currentUsername.value}")
+        Log.d("photourl", "photoUrl : ${photoUrl.value}")
 
         val uidUser = FirebaseAuth.getInstance().currentUser?.uid
         if (uidUser != null) {
             Log.d("UID", "Uid: $uidUser")
-            //GetUserfromEmail(authEmail, currentUsername)
         }
-
-        var biography = mutableStateOf("")
-        getBiography(uidUser ?: "", currentUsername, authEmail ?: "", biography)
-
-        var photourl = mutableStateOf("")
-        getPhotoUrl(uidUser ?: "", currentUsername, authEmail ?: "", photourl)
 
         setContent {
             MasterProjet1Theme {
@@ -80,229 +94,285 @@ class ModifyProfileActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val database =
-                        FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-                    val reference = database.getReference("user")
-                    val (userInput1, setUserInput1) = remember { mutableStateOf(currentUsername.value) }
-                    val (userInput2, setUserInput2) = remember {
-                        mutableStateOf(
-                            if (biography.value.isEmpty()) {
-                                "No biography"
-                            } else {
-                                biography.value
+                    var context = LocalContext.current
+                    ModalNavigationDrawer(
+                        drawerContent = {
+                            ModalDrawerSheet {
+                                Text("SPR MENU", modifier = Modifier.padding(16.dp))
+                                HorizontalDivider()
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Profile") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, ProfileActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Start a training") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, ScanActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Historique") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, DeviceActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Ankle Bracelet Parametrization") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(
+                                            context,
+                                            AnkleBraceletParametrization::class.java
+                                        )
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "LEDs Ribbon Parametrization") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent =
+                                            Intent(context, DeviceActivity_LEDs::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Help") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, HelpActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Who are we ? What is SoundPaceRunners ?") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, CreatorsActivity::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(text = "Contact Form") },
+                                    selected = false,
+                                    onClick = {
+                                        val intent = Intent(context, ContactForm::class.java)
+                                        startActivity(intent)
+                                    }
+                                )
                             }
-                        )
-                    }
-                    val (userInput3, setUserInput3) = remember {
-                        mutableStateOf(
-                            if (photourl.value.isEmpty()) {
-                                "No photo"
-                            } else {
-                                photourl.value
+                        }
+                    ) {
+
+                        val database =
+                            FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+                        val reference = database.getReference("RegisterUser")
+
+                        val (userInput1, setUserInput1) = remember { mutableStateOf(currentUsername.value) }
+                        val (userInput3, setUserInput3) = remember {
+                            mutableStateOf(
+                                if (photoUrl.value.isEmpty()) {
+                                    "No photo"
+                                } else {
+                                    photoUrl.value
+                                }
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.soundpacerunnerslogo),
+                                contentDescription = "",
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .size(180.dp) // Définir la taille de l'image
+                            )
+                        }
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            item {
+                                Spacer(modifier = Modifier.height(50.dp))
                             }
-                        )
-                    }
 
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.soundpacerunnerslogo),
-                            contentDescription = "",
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .size(180.dp) // Définir la taille de l'image
-                        )
-                    }
+                            item {
+                                Text(
+                                    text = "Username",
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                            }
 
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        //verticalArrangement = Arrangement.Center,
-                        //horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Spacer(modifier = Modifier.height(240.dp)) // Espacement vertical de 16 dp
+                            item {
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
 
-                        Text(
-                            text = "Username",
-                            textAlign = TextAlign.Start, // Aligner le texte vers la gauche
-                            fontSize = 20.sp, // Taille du texte
-                            modifier = Modifier.padding(start = 16.dp) // Espacement à gauche
+                            item {
+                                TextField(
+                                    value = currentUsername.value,
+                                    onValueChange = {
+                                        setUserInput1(it)
+                                        currentUsername.value = it
+                                    },
+                                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                                )
+                            }
 
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        TextField(
-                            value = userInput1,
-                            onValueChange = {
-                                setUserInput1(it)
-                                // Mettez à jour currentUsername avec la nouvelle valeur entrée
-                                currentUsername.value = it
-                            },
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Button(
-                            onClick = {
-                                // Utilisez la valeur de userInput comme bon vous semble
-                                Log.d("UserInput", "Texte saisi : $userInput1")
-                                postmodifydata_user(uidUser ?: "", userInput1)
-                                //postdata(uidUser ?: "", currentUsername.value)
-                                // Afficher un toast pour indiquer que les données ont été validées
-                                Toast.makeText(
-                                    applicationContext,
-                                    "Validate username changes done with success",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            },
-                            modifier = Modifier
-                                .padding(16.dp) // Ajoutez un padding de 16 dp
-                                .widthIn(max = 200.dp) // Limitez la largeur maximale à 200 dp
-                        ) {
-                            Text("Validate username changes")
+                            item {
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
+
+                            item {
+                                Button(
+                                    onClick = {
+                                        Log.d("UserInput", "Texte saisi : $userInput1")
+                                        postmodifydata_user(uidUser ?: "", userInput1)
+                                        Toast.makeText(
+                                            context,
+                                            "Validate username changes done with success",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                ) {
+                                    Text("Validate username changes")
+                                }
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
+
+                            item {
+                                HorizontalDivider(
+                                    modifier = Modifier
+                                        .padding(horizontal = 14.dp)
+                                        .fillMaxWidth(),
+                                    thickness = 2.dp,
+                                    color = Color.Blue
+                                )
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.height(20.dp))
+                            }
+
+                            item {
+                                Text(
+                                    text = "User Photo",
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 15.sp,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
+
+                            item {
+                                TextField(
+                                    value = photoUrl.value,
+                                    onValueChange = {
+                                        setUserInput3(it)
+                                        photoUrl.value = it
+                                    },
+                                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth()
+                                )
+                            }
+
+                            item {
+                                Spacer(modifier = Modifier.height(5.dp))
+                            }
+
+                            item {
+                                Button(
+                                    onClick = {
+                                        Log.d("UserInput", "Texte saisi : $userInput3")
+                                        postmodifydata_photo(uidUser ?: "", userInput3)
+                                        Toast.makeText(
+                                            context,
+                                            "Validate photoUrl changes done with success",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                ) {
+                                    Text("Validate photo url changes")
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Divider(
-                            color = Color.Blue, // Couleur de la ligne
-                            thickness = 2.dp, // Épaisseur de la ligne en pixels
-                            modifier = Modifier
-                                .padding(horizontal = 14.dp) // Espacement horizontal
-                                .fillMaxWidth() // Remplit toute la largeur disponible
-                                .align(Alignment.CenterHorizontally) // Alignement horizontal au centre
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = "User description",
-                            textAlign = TextAlign.Start, // Aligner le texte vers la gauche
-                            fontSize = 20.sp, // Taille du texte
-                            modifier = Modifier.padding(start = 16.dp) // Espacement à gauche
-
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        TextField(
-                            value = userInput2,
-                            onValueChange = {
-                                setUserInput2(it)
-                                biography.value = it
-                            },
-                            //label = { Text("Text Field 1") }
-                            modifier = Modifier.padding(horizontal = 16.dp) // Espacement à gauche et à droite
-
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Button(
-                            onClick = {
-                                // Utilisez la valeur de userInput comme bon vous semble
-                                Log.d("UserInput", "Texte saisi : $userInput2")
-                                postmodifydata_bio(uidUser ?: "", userInput2)
-                                //postmodifydata_bio(uidUser ?: "", biography.value)
-                                // Afficher un toast pour indiquer que les données ont été validées
-                                Toast.makeText(
-                                    applicationContext,
-                                    "Validate biography changes done with success",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            },
-                            modifier = Modifier
-                                .padding(16.dp) // Ajoutez un padding de 16 dp
-                                .widthIn(max = 200.dp) // Limitez la largeur maximale à 200 dp
-                        ) {
-                            Text("Validate biography changes")
-                        }
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Divider(
-                            color = Color.Blue, // Couleur de la ligne
-                            thickness = 2.dp, // Épaisseur de la ligne en pixels
-                            modifier = Modifier
-                                .padding(horizontal = 14.dp) // Espacement horizontal
-                                .fillMaxWidth() // Remplit toute la largeur disponible
-                                .align(Alignment.CenterHorizontally) // Alignement horizontal au centre
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = "User Photo",
-                            textAlign = TextAlign.Start, // Aligner le texte vers la gauche
-                            fontSize = 20.sp, // Taille du texte
-                            modifier = Modifier.padding(start = 16.dp) // Espacement à gauche
-
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        TextField(
-                            value = userInput3,
-                            onValueChange = {
-                                setUserInput3(it)
-                                photourl.value = it
-                            },
-                            //label = { Text("Text Field 1") }
-                            modifier = Modifier.padding(horizontal = 16.dp) // Espacement à gauche et à droite
-
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-                        Button(
-                            onClick = {
-                                // Utilisez la valeur de userInput comme bon vous semble
-                                Log.d("UserInput", "Texte saisi : $userInput3")
-                                postmodifydata_photo(uidUser ?: "", userInput3)
-                                //postmodifydata_photo(uidUser ?: "", photourl.value)
-                                // Afficher un toast pour indiquer que les données ont été validées
-                                Toast.makeText(
-                                    applicationContext,
-                                    "Validate photoUrl changes done with success",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            },
-                            modifier = Modifier
-                                .padding(16.dp) // Ajoutez un padding de 16 dp
-                                .widthIn(max = 200.dp) // Limitez la largeur maximale à 200 dp
-                        ) {
-                            Text("Validate photo url changes")
-                        }
-
                     }
-                    //ActionBarModifyProfile(navigateFunction = ::startActivity)
                 }
             }
         }
     }
-    fun getBiography(uid: String, username: MutableState<String>, email: String, biography: MutableState<String>) {
-        val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-        val userRef = database.getReference("user").child(uid)
 
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+    private fun findUsernameByEmail(email: String, callback: (String?) -> Unit) {
+        val usersRef =
+            FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+                .getReference("RegisterUser")
+        usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val user = dataSnapshot.getValue(User::class.java)
-                if (user != null) {
-                    biography.value = user.age
-                    Log.d("UserBiography", "Biography: $biography")
-                    // Utilisez la variable biography comme vous le souhaitez
-                } else {
-                    Log.d("UserBiography", "User not found.")
+                for (userSnapshot in dataSnapshot.children) {
+                    Log.d("userSnapshot", "userSnapshot : $userSnapshot")
+                    val userEmail = userSnapshot.child("email").getValue(String::class.java)
+                    Log.d("useremail", "useremailchild : $userEmail")
+                    if (userEmail == email) {
+                        val username = userSnapshot.child("username").getValue(String::class.java)
+                        callback(username)
+                        return
+                    }
                 }
+                callback(null) // Email not found
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
-                Log.d("UserBiography", "Database error: ${databaseError.message}")
+                Log.w("ProfileActivity", "loadPost:onCancelled", databaseError.toException())
+                callback(null)
             }
         })
     }
 
-    fun getPhotoUrl(uid: String, username: MutableState<String>, email: String, photourl: MutableState<String>) {
-        val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-        val userRef = database.getReference("user").child(uid)
-
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+    private fun findPhotoUrlByEmail(email: String, callback: (String?) -> Unit) {
+        val usersRef =
+            FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+                .getReference("RegisterUser")
+        usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val user = dataSnapshot.getValue(User::class.java)
-                if (user != null) {
-                    photourl.value = user.photoUrl
-                    Log.d("UserPhotoUrl", "PhotoUrl: $photourl")
-                    // Utilisez la variable biography comme vous le souhaitez
-                } else {
-                    Log.d("UserPhotoUrl", "User not found.")
+                for (userSnapshot in dataSnapshot.children) {
+                    Log.d("userSnapshot", "userSnapshot : $userSnapshot")
+                    val userEmail = userSnapshot.child("email").getValue(String::class.java)
+                    Log.d("useremail", "useremailchild : $userEmail")
+                    if (userEmail == email) {
+                        val photoUrl = userSnapshot.child("photoUrl").getValue(String::class.java)
+                        callback(photoUrl)
+                        return
+                    }
                 }
+                callback(null) // Email not found
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
-                Log.d("UserPhotoUrl", "Database error: ${databaseError.message}")
+                Log.w("ProfileActivity", "loadPost:onCancelled", databaseError.toException())
+                callback(null)
             }
         })
     }
@@ -311,47 +381,14 @@ class ModifyProfileActivity : ComponentActivity() {
         val intent = Intent(this, activity)
         startActivity(intent)
     }
-
-    fun GetUserfromEmail(email: String, returnUsername: MutableState<String>) {
-        val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-        val myRef = database.getReference("user")
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (userSnapshot in dataSnapshot.children) {
-                    val user = userSnapshot.getValue(User::class.java)
-                    if (user != null) {
-                        if (user.email == email) {
-                            returnUsername.value = user.username
-                        }
-                    }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.d(FirebaseRemoteConfig.TAG, "Failed to read value.", error.toException())
-            }
-        })
-    }
 }
 
 
-private fun postmodifydata_user(key: String, newdata : String) {
+private fun postmodifydata_user(userId: String, newdata: String) {
 
-    //val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-    //val myRef = database.getReference("user")
-
-// Supposez que vous avez la clé de l'élément que vous souhaitez mettre à jour
-    //val key = "clé_de_l'élément"
-
-// Obtenez une référence à l'élément que vous souhaitez mettre à jour en utilisant sa clé
-    //val elementRef = myRef.child(key)
-
-// Mettez à jour les données de l'élément
-    //val newData =
-    //elementRef.setValue(newData) // Pour remplacer complètement les données de l'élément
-
-    val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-    val userRef = database.getReference("user").child(key)
+    val database =
+        FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+    val userRef = database.getReference("RegisterUser").child(userId)
 
     val updates = hashMapOf<String, Any>(
         "username" to newdata
@@ -367,55 +404,11 @@ private fun postmodifydata_user(key: String, newdata : String) {
 
 }
 
-private fun postmodifydata_bio(key: String, newdata : String) {
+private fun postmodifydata_photo(userId: String, newdata: String) {
 
-    //val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-    //val myRef = database.getReference("user")
-
-// Supposez que vous avez la clé de l'élément que vous souhaitez mettre à jour
-    //val key = "clé_de_l'élément"
-
-// Obtenez une référence à l'élément que vous souhaitez mettre à jour en utilisant sa clé
-    //val elementRef = myRef.child(key)
-
-// Mettez à jour les données de l'élément
-    //val newData =
-    //elementRef.setValue(newData) // Pour remplacer complètement les données de l'élément
-
-    val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-    val userRef = database.getReference("user").child(key)
-
-    val updates = hashMapOf<String, Any>(
-        "biographie" to newdata
-    )
-
-    userRef.updateChildren(updates)
-        .addOnSuccessListener {
-            Log.d("UpdateBiography", "Biography updated successfully.")
-        }
-        .addOnFailureListener { e ->
-            Log.e("UpdateBiography", "Error updating Biography: ${e.message}")
-        }
-
-}
-
-private fun postmodifydata_photo(key: String, newdata : String) {
-
-    //val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-    //val myRef = database.getReference("user")
-
-// Supposez que vous avez la clé de l'élément que vous souhaitez mettre à jour
-    //val key = "clé_de_l'élément"
-
-// Obtenez une référence à l'élément que vous souhaitez mettre à jour en utilisant sa clé
-    //val elementRef = myRef.child(key)
-
-// Mettez à jour les données de l'élément
-    //val newData =
-    //elementRef.setValue(newData) // Pour remplacer complètement les données de l'élément
-
-    val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-    val userRef = database.getReference("user").child(key)
+    val database =
+        FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app/")
+    val userRef = database.getReference("RegisterUser").child(userId)
 
     val updates = hashMapOf<String, Any>(
         "photoUrl" to newdata
@@ -430,120 +423,3 @@ private fun postmodifydata_photo(key: String, newdata : String) {
         }
 
 }
-
-
-/*
-@Composable
-fun ReceivedData(receivedValue: MutableState<String>) {
-    // Créez un MutableState pour stocker la valeur reçue
-    //val receivedValue = remember { mutableStateOf("") }
-
-    // Récupérez la valeur depuis Firebase et mettez à jour le MutableState
-    LaunchedEffect(Unit) {
-        val database = FirebaseDatabase.getInstance("https://sportscape-38027-default-rtdb.europe-west1.firebasedatabase.app/")
-        val myRef = database.getReference("tmp")
-
-        myRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                // Mettre à jour le MutableState avec la valeur récupérée
-                receivedValue.value = dataSnapshot.getValue(String::class.java) ?: ""
-                Log.d(TAG, "Value is: ${receivedValue.value}")
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.d(TAG, "Failed to read value.", error.toException())
-            }
-        })
-    }
-
-    // Affichez la valeur dans votre interface utilisateur
-    Text(
-        text = receivedValue.value,
-        //style = TextStyle(fontSize = 20.sp)
-    )
-}
-
-@Composable
-fun DisplayReceivedValue(receivedValue: String) {
-    Text(
-        text = receivedValue,
-        //style = TextStyle(fontSize = 20.sp)
-    )
-}
-*/
-/*
-@Composable
-fun ActionBarModifyProfile(navigateFunction: (Class<*>) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.Bottom
-    ) {
-        IconButton(
-            onClick = {
-                navigateFunction(MainActivity::class.java)
-            }, modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.home),
-                contentDescription = "Home",
-                tint = Color.Blue,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        IconButton(
-            onClick = { FindActivity::class.java },
-            modifier = Modifier
-                .padding(horizontal = 10.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.find),
-                contentDescription = "Find",
-                tint = Color.Blue,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        IconButton(
-            onClick = {
-                navigateFunction(NewPublicationActivity::class.java)
-            }, modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.add),
-                contentDescription = "Add",
-                tint = Color.Blue,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        IconButton(
-            onClick = {
-                navigateFunction(MapActivity::class.java)
-            }, modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.map),
-                contentDescription = "Map",
-                tint = Color.Blue,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        IconButton(
-            onClick = {
-                navigateFunction(UserProfileActivity::class.java)
-            }, modifier = Modifier.padding(horizontal = 10.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.profile),
-                contentDescription = "Profile",
-                tint = Color.Blue,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-*/
-

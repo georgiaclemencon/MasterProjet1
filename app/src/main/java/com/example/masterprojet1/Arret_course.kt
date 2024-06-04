@@ -12,24 +12,44 @@ import android.os.IBinder
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.VectorConverter
+import androidx.compose.animation.core.animateValue
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.example.masterprojet1.ui.theme.MasterProjet1Theme
@@ -39,7 +59,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.getValue
+import com.google.firebase.database.ktx.getValue
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStartAxis
@@ -66,12 +86,15 @@ class NewCourse : ComponentActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private var elapsedTime: String? = null
-
+    private var pulseValue: Float = 0.0f
 
     private var courseId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val pulseValue = intent.getFloatExtra("pulseValue", 0.0f)
+        Log.d("pulseValueMax", "Got pulseValue from intent: $pulseValue")
 
         courseId = intent.getStringExtra("courseId")
 
@@ -108,15 +131,15 @@ class NewCourse : ComponentActivity() {
             getLastKnownLocation()
             setupUI()
         }
-        readSpeedValuesFromDatabase()
+//        readSpeedValuesFromDatabase()
 //        storeCourseData(course, elapsedTime)
 
-        getLastKnownLocation() // Now it's safe to call this method
+
 
 
         setContent {
             setupUI()
-
+            PulsatingCircles(pulseValue =   pulseValue)
 
             MasterProjet1Theme {
                 // A surface container using the 'background' color from the theme
@@ -183,8 +206,7 @@ class NewCourse : ComponentActivity() {
                         val addresses =
                             geocoder.getFromLocation(location.latitude, location.longitude, 1)
                         val cityName = addresses?.get(0)?.locality
-                        course.position =
-                            cityName ?: "Unknown location" // Set course.position to the city name
+                        course.position =cityName ?: "Unknown location" // Set course.position to the city name
                         Log.d("NewCourse", "City: $cityName") // Log the city name
                     } catch (e: IOException) {
                         Log.e("NewCourse", "Failed to get city name: $e")
@@ -200,7 +222,7 @@ class NewCourse : ComponentActivity() {
 
 
     fun readSpeedValuesFromDatabase() {
-        Log.e("testtt", "Course ID: $courseId")
+        Log.e("courseId", "Course ID: $courseId")
 
 
         val speedListRef = database.getReference("users/course/$courseId/vitesse")
@@ -237,13 +259,14 @@ class NewCourse : ComponentActivity() {
     }
 
     data class CourseData(
-        val id: Int,
+        val id: String,
         val date: Date,
         val position: String,
         val maxSpeed: Float,
         val chronos: String,
         val realTimeSpeed: Float,
-        val speedValues: List<Float>
+        val speedValues: List<Float>,
+        val pulseValue: Float
     ) {
         val averageSpeed: Float
             get() = if (speedValues.isNotEmpty()) speedValues.average().toFloat() else 0f
@@ -264,7 +287,8 @@ class NewCourse : ComponentActivity() {
             maxSpeed = course.maxSpeed,
             chronos = elapsedTime ?: "00:00:00",
             realTimeSpeed = course.realTimeSpeed.value,
-            speedValues = course.speedValues.value.map { it.toFloat() }
+            speedValues = course.speedValues.value.map { it.toFloat() },
+            pulseValue = pulseValue
         )
 
         // Utilisez courseId pour créer une référence unique pour chaque course
@@ -355,13 +379,14 @@ class NewCourse : ComponentActivity() {
                                     maxSpeed = course.maxSpeed,
                                     chronos = elapsedTime ?: "00:00:00",
                                     realTimeSpeed = course.realTimeSpeed.value,
-                                    speedValues = course.speedValues.value.map { it.toFloat() }
+                                    speedValues = course.speedValues.value.map { it.toFloat() },
+                                    pulseValue = course.pulse.value
                                 )
                             )
 
                         }
 
-                        // Add more UI elements as needed...
+
                     }
                 }
             }
@@ -386,11 +411,12 @@ class NewCourse : ComponentActivity() {
             Text(text = "Allure par km: ${courseData.pacePerKm} min/km")
             Log.d("DisplayCourseHistory", "Allure par km: ${courseData.pacePerKm} min/km")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
-            Text(text = "Position: ${courseData.position}")
+            Text(text = "Position: Toulon")
             Log.d("DisplayCourseHistory", "Position: ${courseData.position}")
             HorizontalDivider(thickness = 1.dp, color = Color.Gray)
         }
         storeCourseData(course, elapsedTime)
+        PulsatingCircles(pulseValue = pulseValue)
     }
 
     @Composable
@@ -424,6 +450,104 @@ class NewCourse : ComponentActivity() {
                 modelProducer
             )
         }
+    }
+
+
+    @Composable
+    fun SimpleCircleShape2(
+        size: Dp,
+        color: Color = Color.White,
+        borderWidth: Dp = 0.dp,
+        borderColor: Color = Color.LightGray.copy(alpha = 0.0f)
+    ) {
+        Column(
+            modifier = Modifier
+                .wrapContentSize(Alignment.Center)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(
+                        color
+                    )
+                    .border(borderWidth, borderColor)
+            )
+        }
+    }
+
+    val MyColorScheme = darkColorScheme(
+        primary = Color.Black, // predefined color
+        secondary = Color.Red, // predefined color
+        tertiary = Color.DarkGray, // custom color
+        onPrimary = Color.White // predefined color
+    )
+
+    @Composable
+    fun MyTheme(content: @Composable () -> Unit) {
+        MaterialTheme(colorScheme = MyColorScheme) {
+            content()
+        }
+    }
+
+    @Composable
+    fun PulsatingCircles(pulseValue: Float) {
+        val pulseValue = intent.getFloatExtra("pulseValue", 0.0f)
+        Log.d("pulseValueMax", "Got pulseValue from intent: $pulseValue")
+        MyTheme {
+            Column {
+                val infiniteTransition = rememberInfiniteTransition()
+                val size by infiniteTransition.animateValue(
+                    initialValue = 200.dp,
+                    targetValue = 190.dp,
+                    Dp.VectorConverter,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(500, easing = FastOutLinearInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    )
+                )
+                val smallCircle by infiniteTransition.animateValue(
+                    initialValue = 150.dp,
+                    targetValue = 160.dp,
+                    Dp.VectorConverter,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1000, easing = FastOutLinearInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    )
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SimpleCircleShape2(
+                        size = size,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    SimpleCircleShape2(
+                        size = smallCircle,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    SimpleCircleShape2(
+                        size = 130.dp,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    Column {
+                        Text(
+                            text = "MAX: ${pulseValue}",
+                            style = TextStyle(color = MaterialTheme.colorScheme.onPrimary)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Preview
+    @Composable
+    fun PreviewPulsatingCircles() {
+        PulsatingCircles(pulseValue = 0.0f) // Replace 0.0f with any test value
     }
 
     @Composable

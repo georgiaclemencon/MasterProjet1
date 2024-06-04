@@ -48,10 +48,11 @@ class LoginActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.e("test", "test apres create")
         auth = FirebaseAuth.getInstance()
 //        auth.signOut()
         database =
-            FirebaseDatabase.getInstance("https://master-42ff9-default-rtdb.europe-west1.firebasedatabase.app/")
+            FirebaseDatabase.getInstance("https://master2-20e46-default-rtdb.europe-west1.firebasedatabase.app")
 
 
         setContent {
@@ -66,14 +67,14 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-    override fun onStart() {
+    /*override fun onStart() {
         super.onStart()
         // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if (currentUser != null) {
             StartActivity()
         }
-    }
+    }*/
 
     private fun register(email: String, password: String, username: String, photoUrl: String) {
         auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(this) { task ->
@@ -104,11 +105,11 @@ class LoginActivity : ComponentActivity() {
     }
 
     fun writeNewUser(userId: String, username: String, email: String, photoUrl: String) {
-        val usersRef = database.getReference("users").child(userId)
+        Log.e("ajout compte","ajout compte writeuser")
+        val usersRef = database.getReference("RegisterUser").child(userId)
         usersRef.child("username").setValue(username)
         usersRef.child("email").setValue(email)
         usersRef.child("photoUrl").setValue(photoUrl)
-        usersRef.child("biographie").setValue("")
     }
 
     private fun login(email: String, password: String) {
@@ -122,7 +123,12 @@ class LoginActivity : ComponentActivity() {
                     "Authentication success.",
                     Toast.LENGTH_SHORT,
                 ).show()
-                StartActivity()
+                val currentUser = auth.currentUser
+                if (currentUser != null) {
+                    val intent = Intent(this, MainActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }
             } else {
                 // If sign in fails, display a message to the user.
                 Log.w(TAG, "signInWithEmail:failure", task.exception)
@@ -135,15 +141,14 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-        fun StartActivity() {
+    /*fun StartActivity() {
 //        val intent = Intent(this, ScanActivity::class.java)
 //        startActivity(intent)
 
-            val intent = Intent(this, ActivityMenu::class.java)
-startActivity(intent)
-finish()
-    }
-
+        val intent = Intent(this, ActivityMenu::class.java)
+        startActivity(intent)
+        finish()
+    }*/
 
 
     @Composable
@@ -167,8 +172,8 @@ fun LoginComponent(login: (String, String) -> Unit) {
 fun RegisterComponent(
     register: (String, String, String, String) -> Unit, authState: MutableState<AuthState>
 ) {
-    var email by remember { mutableStateOf("georgia@gmail.com") }
-    var password by remember { mutableStateOf("georgia1234") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var photoUrl by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -232,8 +237,8 @@ fun RegisterComponent(
 fun LoginComponent(
     logIn: (String, String) -> Unit, authState: MutableState<AuthState>
 ) {
-    var email by remember { mutableStateOf("georgia@gmail.com") }
-    var password by remember { mutableStateOf("georgia1234") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -243,7 +248,7 @@ fun LoginComponent(
         Text(
             "Welcome",
             fontSize = 24.sp,
-            color = Color.Green,
+            color = Color.Black,
             modifier = Modifier.padding(bottom = 24.dp)
         )
         Card {

@@ -46,7 +46,7 @@ class SplashActivity : ComponentActivity() {
     }
     // Cette fonction est appelée lorsque le délai est écoulé, elle démarre l'activité suivante
     private fun navigateToNextScreen() {
-        val intent = Intent(this, MainActivity::class.java)
+        val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
         finish()
     }

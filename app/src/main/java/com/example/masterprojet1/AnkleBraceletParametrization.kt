@@ -130,6 +130,12 @@ class AnkleBraceletParametrization : ComponentActivity() {
                                     }
                                 )
                                 NavigationDrawerItem(
+                                    label = { Text(text = "Start a training") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, ScanActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
                                     label = { Text(text = "Historique") },
                                     selected = false,
                                     onClick = {
@@ -209,6 +215,8 @@ class AnkleBraceletParametrization : ComponentActivity() {
 
                         var minSpeed by remember { mutableStateOf("7.30") }
                         var maxSpeed by remember { mutableStateOf("6") }
+                        var active by remember { mutableStateOf("1") }
+
 
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -242,9 +250,15 @@ class AnkleBraceletParametrization : ComponentActivity() {
 
                             Button(
                                 onClick = {
-                                    writetocharac_float(minSpeed.toFloat(), 0)
+                                    Log.e("minSpeed.toFloat()","${minSpeed.toFloat()}")
+                                    writeValueToCharacteristic(minSpeed, 0)
+                                    //writetocharac_float(minSpeed.toFloat(), 0)
                                     Log.e("firstwrite", "firstwrite")
-                                    writetocharac_float(maxSpeed.toFloat(), 1)
+                                    Log.e("maxSpeed.toFloat()","${maxSpeed.toFloat()}")
+                                    writeValueToCharacteristic(maxSpeed, 1)
+                                    writeValueToCharacteristic(active, 2)
+                                    //writeValueToCharacteristic_buz("1",0)
+                                    //writetocharac_float(maxSpeed.toFloat(), 1)
                                     Log.e("secondwrite", "secondwrite")
                                     finish()
                                 },
@@ -357,7 +371,7 @@ class AnkleBraceletParametrization : ComponentActivity() {
             }
         }
     }
-
+/*
     fun writetocharac(value: Int, nb: Int) {
         // Convertir l'entier en tableau de bytes
         Log.e("dans fonction writetocharac", "writetochara")
@@ -419,6 +433,103 @@ class AnkleBraceletParametrization : ComponentActivity() {
 
                         characteristic.value = value
                         Log.d("CharacteristicValue", "Valeur de la value : $value")
+                        Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value.contentToString()}")
+                        gatt?.writeCharacteristic(characteristic)
+                    } else {
+                        Log.e("writeValueToCharacteristic", "Caractéristique non valide")
+                    }
+                } else {
+                    Log.e("writeValueToCharacteristic", "Aucune caractéristique dans le troisième service")
+                }
+            } else {
+                Log.e("writeValueToCharacteristic", "Liste des services non disponible")
+            }
+        } else {
+            Log.e("writeValueToCharacteristic", "Connexion Bluetooth non établie")
+        }
+    }
+    */
+
+    @SuppressLint("MissingPermission")
+    fun writeValueToCharacteristic(value: String, nb: Int) {
+        // Convertir la chaîne en ByteArray
+        val byteArray = value.toByteArray(Charsets.UTF_8)
+
+        // Vérifiez si la connexion Bluetooth est établie et que gatt n'est pas null
+        if (gatt != null) {
+            // Vérifiez si la liste des services est disponible
+            if (services != null) {
+                // Vous pouvez accéder aux services ici
+                Log.e("serviceespasnull","services")
+                service = gatt?.services?.get(5)
+                Log.e("deuxiemeservice","$service")
+                Log.e("uuid service","${service?.uuid}")
+                // Troisième service (index 2)
+                Log.e("write2","write2")
+
+                // Vérifiez si le service et ses caractéristiques sont valides
+                if (service != null && service!!.characteristics.isNotEmpty()) {
+                    Log.e("write3","write3")
+                    val numberOfCharacteristics = service?.characteristics?.size ?: 0
+                    Log.e("sizeecharac","$numberOfCharacteristics")
+                    // Récupérez la première caractéristique du deuxième service
+                    val characteristic = service!!.characteristics[nb] // Première caractéristique du deuxième service
+                    Log.e("charac uuid","${characteristic.uuid}")
+                    // Vérifiez si la caractéristique est valide
+                    if (characteristic != null) {
+                        // Écrivez la valeur dans la caractéristique
+                        Log.e("write4","write4")
+
+                        characteristic.value = byteArray
+                        Log.d("CharacteristicValue", "Valeur de la chaîne : $value")
+                        Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value.contentToString()}")
+                        gatt?.writeCharacteristic(characteristic)
+                    } else {
+                        Log.e("writeValueToCharacteristic", "Caractéristique non valide")
+                    }
+                } else {
+                    Log.e("writeValueToCharacteristic", "Aucune caractéristique dans le troisième service")
+                }
+            } else {
+                Log.e("writeValueToCharacteristic", "Liste des services non disponible")
+            }
+        } else {
+            Log.e("writeValueToCharacteristic", "Connexion Bluetooth non établie")
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun writeValueToCharacteristic_buz(value: String, nb: Int) {
+        // Convertir la chaîne en ByteArray
+        val byteArray = value.toByteArray(Charsets.UTF_8)
+
+        // Vérifiez si la connexion Bluetooth est établie et que gatt n'est pas null
+        if (gatt != null) {
+            // Vérifiez si la liste des services est disponible
+            if (services != null) {
+                // Vous pouvez accéder aux services ici
+                Log.e("serviceespasnull","services")
+                service = gatt?.services?.get(4)
+                Log.e("deuxiemeservice","$service")
+                Log.e("uuid service","${service?.uuid}")
+                // Troisième service (index 2)
+                Log.e("write2","write2")
+
+                // Vérifiez si le service et ses caractéristiques sont valides
+                if (service != null && service!!.characteristics.isNotEmpty()) {
+                    Log.e("write3","write3")
+                    val numberOfCharacteristics = service?.characteristics?.size ?: 0
+                    Log.e("sizeecharac","$numberOfCharacteristics")
+                    // Récupérez la première caractéristique du deuxième service
+                    val characteristic = service!!.characteristics[nb] // Première caractéristique du deuxième service
+                    Log.e("charac uuid","${characteristic.uuid}")
+                    // Vérifiez si la caractéristique est valide
+                    if (characteristic != null) {
+                        // Écrivez la valeur dans la caractéristique
+                        Log.e("write4","write4")
+
+                        characteristic.value = byteArray
+                        Log.d("CharacteristicValue", "Valeur de la chaîne : $value")
                         Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value.contentToString()}")
                         gatt?.writeCharacteristic(characteristic)
                     } else {

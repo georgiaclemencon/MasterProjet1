@@ -22,4 +22,6 @@
     <string name="title_activity_device_leds">DeviceActivity_LEDs</string>
     <string name="title_activity_leds">ActivityLEDs</string>
     <string name="title_activity_scan_leds">ScanActivity_LEDs</string>
+    <string name="title_activity_test">TestActivity</string>
+    <string name="title_activity_splash">SplashActivity</string>
 </resources>

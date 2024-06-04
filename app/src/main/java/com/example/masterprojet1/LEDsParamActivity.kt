@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
@@ -132,6 +133,12 @@ class LEDsParamActivity : ComponentActivity() {
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(
+                                    label = { Text(text = "Start a training") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, ScanActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
                                     label = { Text(text = "Historique") },
                                     selected = false,
                                     onClick = { val intent = Intent(context, DeviceActivity::class.java)
@@ -197,7 +204,8 @@ class LEDsParamActivity : ComponentActivity() {
                         var speed by remember { mutableStateOf("5.45") }
                         var distance by remember { mutableStateOf("400") }
                         var nbturns by remember { mutableStateOf("10") }
-                        var color by remember { mutableStateOf("Red") }
+                        var color by remember { mutableStateOf("FF0000") }
+                        val active by remember { mutableStateOf("1") }
 
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -306,15 +314,22 @@ class LEDsParamActivity : ComponentActivity() {
                                             Toast.makeText(
                                                 applicationContext, "Data sent", Toast.LENGTH_SHORT
                                             ).show()
-                                            writetocharac_float(speed.toFloat(), 0)
+                                            //writetocharac_float(speed.toFloat(), 0)
                                             Log.e("firstwritefloat", "firstwrite")
-                                            writetocharac_int(distance.toInt(), 1)
+                                            //writetocharac_int(distance.toInt(), 1)
                                             Log.e("secondwriteint", "secondwrite")
-                                            writetocharac_int(nbturns.toInt(), 2)
+                                            //writetocharac_int(nbturns.toInt(), 2)
                                             Log.e("secondwriteint", "secondwrite")
-                                            writetocharac_string(color, 3)   //couleur hexadecimal
+                                            //writetocharac_string(color, 3)   //couleur hexadecimal
+                                            writeValueToCharacteristic(speed, 0)
+                                            writeValueToCharacteristic(distance, 1)
+                                            writeValueToCharacteristic(nbturns, 2)
+                                            writeValueToCharacteristic(color, 3)
+                                            writeValueToCharacteristic(active, 4)
                                             Log.e("secondwritestring", "secondwrite")
-                                            finish()
+                                            //disconnectFromDevice(device)
+                                            val intent = Intent(context, ScanActivity::class.java)
+                                            startActivity(intent)
                                         },
                                         modifier = Modifier
                                             .padding(16.dp)
@@ -424,7 +439,7 @@ class LEDsParamActivity : ComponentActivity() {
         }
     }
 
-    fun writetocharac_int(value: Int, nb: Int) {
+    /*fun writetocharac_int(value: Int, nb: Int) {
         // Convertir l'entier en tableau de bytes
         Log.e("dans fonction writetocharac", "writetochara")
         Log.e("dans fonction writetocharac", "gatt : $gatt")
@@ -470,9 +485,9 @@ class LEDsParamActivity : ComponentActivity() {
 
     fun intToByteArray(value: Int): ByteArray {
         return byteArrayOf(value.toByte())
-    }
+    }*/
 
-    @SuppressLint("MissingPermission")
+    /*@SuppressLint("MissingPermission")
     fun writeValueToCharacteristic(value: ByteArray, nb: Int) {
         // Vérifiez si la connexion Bluetooth est établie et que gatt n'est pas null
         if (gatt != null) {
@@ -501,6 +516,58 @@ class LEDsParamActivity : ComponentActivity() {
 
                         characteristic.value = value
                         Log.d("CharacteristicValue", "Valeur de la value : $value")
+                        Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value.contentToString()}")
+                        gatt?.writeCharacteristic(characteristic)
+                    } else {
+                        Log.e("writeValueToCharacteristic", "Caractéristique non valide")
+                    }
+                } else {
+                    Log.e("writeValueToCharacteristic", "Aucune caractéristique dans le troisième service")
+                }
+            } else {
+                Log.e("writeValueToCharacteristic", "Liste des services non disponible")
+            }
+        } else {
+            Log.e("writeValueToCharacteristic", "Connexion Bluetooth non établie")
+        }
+    }*/
+
+    fun intToByteArray(value: Int): ByteArray {
+        return ByteBuffer.allocate(4).putInt(value).array()
+    }
+
+    @SuppressLint("MissingPermission")
+    fun writeValueToCharacteristic(value: String, nb: Int) {
+        // Convertir la chaîne en ByteArray
+        val byteArray = value.toByteArray(Charsets.UTF_8)
+
+        // Vérifiez si la connexion Bluetooth est établie et que gatt n'est pas null
+        if (gatt != null) {
+            // Vérifiez si la liste des services est disponible
+            if (services != null) {
+                // Vous pouvez accéder aux services ici
+                Log.e("serviceespasnull","services")
+                service = gatt?.services?.get(2)
+                Log.e("deuxiemeservice","$service")
+                Log.e("uuid service","${service?.uuid}")
+                // Troisième service (index 2)
+                Log.e("write2","write2")
+
+                // Vérifiez si le service et ses caractéristiques sont valides
+                if (service != null && service!!.characteristics.isNotEmpty()) {
+                    Log.e("write3","write3")
+                    val numberOfCharacteristics = service?.characteristics?.size ?: 0
+                    Log.e("sizeecharac","$numberOfCharacteristics")
+                    // Récupérez la première caractéristique du deuxième service
+                    val characteristic = service!!.characteristics[nb] // Première caractéristique du deuxième service
+                    Log.e("charac uuid","${characteristic.uuid}")
+                    // Vérifiez si la caractéristique est valide
+                    if (characteristic != null) {
+                        // Écrivez la valeur dans la caractéristique
+                        Log.e("write4","write4")
+
+                        characteristic.value = byteArray
+                        Log.d("CharacteristicValue", "Valeur de la chaîne : $value")
                         Log.d("CharacteristicValue", "Valeur de la caractéristique : ${characteristic.value.contentToString()}")
                         gatt?.writeCharacteristic(characteristic)
                     } else {
@@ -567,5 +634,26 @@ class LEDsParamActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun disconnectFromDevice(device: BluetoothDevice?) {
+        // Vérifiez si le BluetoothDevice n'est pas null
+        if (device == null) {
+            Log.e(ContentValues.TAG, "BluetoothDevice is null.")
+            return
+        }
+
+        // Établir une connexion BluetoothGatt avec le périphérique
+        val gattCallback = object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    // Si vous êtes connecté, déconnectez-vous
+                    gatt?.disconnect()
+                }
+            }
+        }
+
+        val gatt = device?.connectGatt(this, false, gattCallback)
     }
 }

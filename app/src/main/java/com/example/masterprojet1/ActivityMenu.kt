@@ -55,9 +55,9 @@ class ActivityMenu : ComponentActivity() {
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(
-                                    label = { Text(text = "Demarer une course") },
+                                    label = { Text(text = "Start a training") },
                                     selected = false,
-                                    onClick = { val intent = Intent(context, DeviceActivity::class.java)
+                                    onClick = { val intent = Intent(context, ScanActivity::class.java)
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(

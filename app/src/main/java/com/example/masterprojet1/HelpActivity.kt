@@ -55,6 +55,12 @@ class HelpActivity : ComponentActivity() {
                                         startActivity(intent) }
                                 )
                                 NavigationDrawerItem(
+                                    label = { Text(text = "Start a training") },
+                                    selected = false,
+                                    onClick = { val intent = Intent(context, ScanActivity::class.java)
+                                        startActivity(intent) }
+                                )
+                                NavigationDrawerItem(
                                     label = { Text(text = "Historique") },
                                     selected = false,
                                     onClick = { val intent = Intent(context, DeviceActivity::class.java)
